@@ -1,17 +1,15 @@
+from django.conf import settings
 from django.db import models
 
-# Create your models here.
-from django.db import models
-from django.conf import settings
 
 class Notification(models.Model):
-    NOTIFICATION_TYPES = (
-        ("new_article", "New Article"),
-        ("comment", "Comment"),
-        ("reply", "Reply to Comment"),
-        ("bookmark", "Article Liked"),
-        ("follow", "New Follower"),
-    )
+    class Type(models.TextChoices):
+        NEW_ARTICLE = "new_article", "New Article"
+        COMMENT = "comment", "Comment"
+        REPLY = "reply", "Reply to Comment"
+        LIKE = "like", "Article Liked"
+        BOOKMARK = "bookmark", "Article Saved"
+        FOLLOW = "follow", "New Follower"
 
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -25,7 +23,7 @@ class Notification(models.Model):
         blank=True,
         related_name="notifications_sent"
     )
-    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    notification_type = models.CharField(max_length=20, choices=Type.choices)
 
     # Generic content links (flexible)
     article = models.ForeignKey(
@@ -76,6 +74,9 @@ class ReadingHistory(models.Model):
         unique_together = ("user", "article")
         ordering = ["-viewed_at"]
 
+    def __str__(self):
+        return f"{self.user} read {self.article}"
+
 
 class UserFollowing(models.Model):
     """
@@ -94,8 +95,11 @@ class UserFollowing(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("follower", "following")
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["follower", "following"], name="unique_user_following"),
+            models.CheckConstraint(condition=~models.Q(follower=models.F("following")), name="prevent_self_follow"),
+        ]
 
     def __str__(self):
         return f"{self.follower} follows {self.following}"

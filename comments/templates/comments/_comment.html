@@ -2,36 +2,42 @@
 <div class="comment-item" id="comment-{{ c.id }}">
   <div class="comment-main">
     <div class="comment-avatar">
-      {% if c.author.avatar %}
+      {% if c.author and c.author.avatar %}
         <img src="{{ c.author.avatar.url }}" alt="{{ c.author.username }}">
-      {% else %}
+      {% elif c.author %}
         <span>{{ c.author.username|first|upper }}</span>
+      {% else %}
+        <span>?</span>
       {% endif %}
     </div>
     <div class="comment-content">
       <div class="comment-meta">
-        <a href="{% url 'accounts:profile' c.author.username %}" class="comment-author">{{ c.author.username }}</a>
+        {% if c.author %}
+          <a href="{% url 'accounts:profile' c.author.username %}" class="comment-author">{{ c.author.username }}</a>
+        {% else %}
+          <span class="comment-author">Deleted user</span>
+        {% endif %}
         <span class="comment-time">{{ c.created_at|timesince }} ago</span>
       </div>
       <div class="comment-body">{{ c.body|linebreaks }}</div>
       <div class="comment-actions">
         {% if user.is_authenticated %}
-          <button class="comment-reply-btn" data-comment-id="{{ c.id }}" data-author="{{ c.author.username }}">
+          <button type="button" class="comment-reply-btn" data-comment-id="{{ c.id }}">
             Reply
           </button>
         {% endif %}
       </div>
 
       {% if user.is_authenticated %}
-      <div class="reply-form-wrapper" id="reply-form-{{ c.id }}" style="display:none">
+      <div class="reply-form-wrapper" id="reply-form-{{ c.id }}">
         <form method="post" action="{% url 'comments:add' %}" class="reply-form">
           {% csrf_token %}
           <input type="hidden" name="article_id" value="{{ c.article_id }}">
           <input type="hidden" name="parent_id" value="{{ c.id }}">
           <div class="reply-input-row">
-            <textarea name="body" rows="2" placeholder="Replying to @{{ c.author.username }}..." required></textarea>
+            <textarea name="body" rows="2" maxlength="5000" placeholder="Replying to @{{ c.author.username|default:'deleted user' }}..." required></textarea>
           </div>
-          <div class="reply-actions">
+          <div class="reply-form-actions">
             <button type="button" class="btn-reply-cancel" data-comment-id="{{ c.id }}">Cancel</button>
             <button type="submit" class="btn-reply-submit">Reply</button>
           </div>
@@ -50,31 +56,3 @@
 {% empty %}
   <p class="no-comments">No comments yet. Be the first!</p>
 {% endfor %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Reply tugmasi bosilganda formani ochish
-    document.querySelectorAll('.comment-reply-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const commentId = this.dataset.commentId;
-            const formWrapper = document.getElementById(`reply-form-${commentId}`);
-            if (formWrapper) {
-                formWrapper.style.display = formWrapper.style.display === 'none' ? 'block' : 'none';
-                if (formWrapper.style.display === 'block') {
-                    formWrapper.querySelector('textarea').focus();
-                }
-            }
-        });
-    });
-
-    // Cancel tugmasi bosilganda formani yopish
-    document.querySelectorAll('.btn-reply-cancel').forEach(button => {
-        button.addEventListener('click', function() {
-            const commentId = this.dataset.commentId;
-            const formWrapper = document.getElementById(`reply-form-${commentId}`);
-            if (formWrapper) {
-                formWrapper.style.display = 'none';
-            }
-        });
-    });
-});
-</script>

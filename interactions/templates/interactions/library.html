@@ -48,7 +48,7 @@
                 <a href="{% url 'interactions:reading-list-detail' l.id %}" class="card" style="display:flex;align-items:center;justify-content:space-between;padding:.75rem;text-decoration:none;color:inherit">
                   <div>
                     <strong>{{ l.name }}</strong>
-                    <div class="hint" style="font-size:.9rem">{{ l.items.count }} stories · {% if l.is_private %}Private{% else %}Public{% endif %}</div>
+                    <div class="hint" style="font-size:.9rem">{{ l.items_total }} stories · {% if l.is_private %}Private{% else %}Public{% endif %}</div>
                   </div>
                   <div class="meta">{{ l.created_at|date:"M j, Y" }}</div>
                 </a>

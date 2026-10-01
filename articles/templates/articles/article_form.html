@@ -1,6 +1,12 @@
 {% extends "core/base.html" %}
 {% load static %}
 
+{% block title %}{% if object %}Edit: {{ object.title }}{% else %}Write a story{% endif %} · MediumClone{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'vendor/quill-1.3.7/quill.snow.css' %}">
+{% endblock %}
+
 {% block content %}
 <div style="display:flex;gap:0;width:100%">
   <!-- Left Sidebar (minimal) -->
@@ -16,33 +22,33 @@
 
   <!-- Main Editor -->
   <section class="center-feed" style="flex:1;max-width:900px;margin:0 auto;padding:2rem">
-    <form method="post" class="article-form" id="article-form" enctype="multipart/form-data">
+    <form method="post" class="article-form" id="article-form" enctype="multipart/form-data" novalidate>
       {% csrf_token %}
 
-      <!-- Title Input -->
-    <div style="margin-bottom:2rem">
-      <!-- Sarlavha inputi -->
-      <input type="text" name="title" class="editor-title" placeholder="Write your article title"
-            value="{{ form.title.value|default_if_none:'' }}" required
-            style="width:100%;font-size:2.5rem;font-weight:700;border:none;outline:none;line-height:1.3;margin-bottom:.5rem">
+      {% if form.non_field_errors %}
+        <div class="form-errors">{{ form.non_field_errors }}</div>
+      {% endif %}
 
-      <!-- Ekspert / Qisqacha matn textarea -->
-      <textarea name="excerpt" class="editor-excerpt" placeholder="Add a compelling summary (optional)"
-                style="width:100%;padding:.75rem 0;border:none;outline:none;font-size:1rem;resize:none;font-family:inherit;color:var(--muted)">{{ form.excerpt.value|default_if_none:'' }}</textarea>
+      <!-- Title & excerpt -->
+      <div style="margin-bottom:2rem">
+        <input type="text" name="title" id="id_title" class="editor-title" placeholder="Write your article title"
+               maxlength="255" value="{{ form.title.value|default_if_none:'' }}" required
+               style="width:100%">
+        {% if form.title.errors %}<div class="field-error">{{ form.title.errors.0 }}</div>{% endif %}
+
+        <textarea name="excerpt" id="id_excerpt" class="editor-excerpt" rows="2"
+                  placeholder="Add a compelling summary (optional)"
+                  style="width:100%">{{ form.excerpt.value|default_if_none:'' }}</textarea>
       </div>
 
-
-      <!-- Divider -->
       <div style="border-top:1px solid var(--border);margin-bottom:2rem"></div>
 
-      <!-- Cover Image Section -->
+      <!-- Cover Image -->
       <div class="cover-section" style="margin-bottom:2rem;padding:1.5rem;background:var(--soft);border-radius:var(--radius)">
         <h4 style="margin:0 0 1rem">📸 Cover Image</h4>
-        <div style="display:flex;gap:1.5rem;align-items:flex-start">
+        <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap">
           <div id="cover-preview" style="width:200px;height:120px;border-radius:var(--radius);background:white;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden">
-            {% if form.initial.cover_image %}
-              <img src="{{ form.initial.cover_image }}" alt="cover" style="width:100%;height:100%;object-fit:cover">
-            {% elif object and object.cover_image %}
+            {% if object.cover_image %}
               <img src="{{ object.cover_image.url }}" alt="cover" style="width:100%;height:100%;object-fit:cover">
             {% else %}
               <div style="text-align:center;color:var(--muted)">
@@ -53,73 +59,59 @@
           </div>
           <div style="flex:1">
             <label for="id_cover_image" class="btn btn-primary" style="display:inline-block;cursor:pointer;margin-bottom:1rem">Choose Image</label>
-            <input type="file" id="id_cover_image" name="cover_image" accept="image/*" style="display:none">
-            <small class="hint">Recommended size: 1200x600px. Formats: JPG, PNG, WebP</small>
+            <input type="file" id="id_cover_image" name="cover_image" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">
+            <small class="hint" style="display:block">Recommended size: 1200x600px. Formats: JPG, PNG, WebP. Max 5 MB.</small>
+            {% if form.cover_image.errors %}<div class="field-error">{{ form.cover_image.errors.0 }}</div>{% endif %}
           </div>
         </div>
       </div>
 
-      <!-- Quill Editor -->
-<!-- Quill Editor -->
-<div style="margin-bottom:2rem">
-  <h4 style="margin:0 0 1rem">✍️ Article Content</h4>
-
-  <!-- Hidden textarea that Django form uses -->
-  <div style="display:none">
-    {{ form.body }}
-  </div>
-
-  <!-- Quill renders here -->
-  <div style="background:white;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-    <div id="quill-editor" style="min-height:400px;font-size:1rem"></div>
-  </div>
-
-  {% if form.body.errors %}
-    <div style="color:#ef4444;margin-top:.5rem;font-size:.9rem">{{ form.body.errors }}</div>
-  {% endif %}
-</div>
-
-      <!-- Tags Input -->
-      <div style="margin-bottom:2rem;padding:1.5rem;background:var(--soft);border-radius:var(--radius)">
-        <h4 style="margin:0 0 1rem">🏷️ Tags</h4>
-        <input type="text" name="tags" placeholder="e.g. technology, django, web development" value="{{ form.initial.tags|default_if_none:'' }}" style="width:100%;padding:.75rem;border:1px solid var(--border);border-radius:var(--radius);font-size:1rem">
-        <small class="hint" style="display:block;margin-top:.5rem">Separate multiple tags with commas. Max 5 tags recommended.</small>
+      <!-- Content (Quill editor) -->
+      <div style="margin-bottom:2rem">
+        <h4 style="margin:0 0 1rem">✍️ Article Content</h4>
+        {{ form.body }}
+        <div style="background:white;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+          <div id="quill-editor" style="min-height:400px;font-size:1rem"></div>
+        </div>
+        {% if form.body.errors %}<div class="field-error">{{ form.body.errors.0 }}</div>{% endif %}
       </div>
 
-      <!-- Publish Settings -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;padding:1.5rem;background:var(--soft);border-radius:var(--radius)">
+      <!-- Tags -->
+      <div style="margin-bottom:2rem;padding:1.5rem;background:var(--soft);border-radius:var(--radius)">
+        <h4 style="margin:0 0 1rem"><label for="id_tags">🏷️ Tags</label></h4>
+        <input type="text" name="tags" id="id_tags" placeholder="e.g. technology, django, web development"
+               value="{% if form.is_bound %}{{ form.data.tags|default:'' }}{% else %}{{ form.initial.tags|default:'' }}{% endif %}"
+               style="width:100%;padding:.75rem;border:1px solid var(--border);border-radius:var(--radius);font-size:1rem">
+        <small class="hint" style="display:block;margin-top:.5rem">Separate tags with commas. Up to 5 tags.</small>
+        {% if form.tags.errors %}<div class="field-error">{{ form.tags.errors.0 }}</div>{% endif %}
+      </div>
+
+      <!-- Publish settings -->
+      <div class="publish-settings">
         <div>
-          <h4 style="margin:0 0 1rem">📅 Status</h4>
-          <select name="status" class="status-select" style="width:100%;padding:.75rem;border:1px solid var(--border);border-radius:var(--radius)">
-            <option value="draft"{% if form.instance.status == "draft" or form.initial.status == "draft" %}selected{% endif %}>Save as Draft</option>
-            <option value="published"{% if form.instance.status == "published" or form.initial.status == "published" %}selected{% endif %}>Publish Now</option>
+          <h4 style="margin:0 0 1rem"><label for="id_status">📅 Status</label></h4>
+          <select name="status" id="id_status" class="status-select" style="width:100%;padding:.75rem;border:1px solid var(--border);border-radius:var(--radius)">
+            <option value="draft" {% if form.status.value == "draft" %}selected{% endif %}>Save as Draft</option>
+            <option value="published" {% if form.status.value == "published" %}selected{% endif %}>Publish Now</option>
           </select>
         </div>
         <div>
-  <div>
-    <h4 style="margin:0 0 1rem">🔒 Visibility</h4>
-    <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
-      <input type="checkbox" name="is_member_only" {% if form.initial.is_member_only %}checked{% endif %} style="cursor:pointer">
-      <span>Member-only story</span>
-    </label>
-    <small class="hint">Only your followers can read this</small>
-  </div>
-</div>
-
-<div style="text-align:center;margin-top:1rem">
-  <button type="submit" class="btn btn-primary" style="padding:.75rem 2rem;font-weight:600;cursor:pointer;min-width:200px">
-    {% if object %}Update Article{% else %}Publish Article{% endif %}
-  </button>
-</div>
-          <h4 style="margin:0 0 1rem">💾 Save</h4>
-          <button type="submit" class="btn btn-primary" style="width:100%;padding:.75rem;font-weight:600;cursor:pointer">
-            {% if object %}Update Article{% else %}Publish Article{% endif %}
-          </button>
+          <h4 style="margin:0 0 1rem">🔒 Visibility</h4>
+          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
+            <input type="checkbox" name="is_member_only" id="id_is_member_only" {% if form.is_member_only.value %}checked{% endif %} style="cursor:pointer">
+            <span>Member-only story</span>
+          </label>
+          <small class="hint">Only your followers can read this</small>
         </div>
+      </div>
 
-      <!-- Preview Button (optional) -->
-      <div style="text-align:center;margin-top:2rem">
-        <a href="{% url 'articles:list' %}" class="hint" style="text-decoration:none">Cancel and go back</a>
+      <div style="text-align:center;margin-top:1.5rem">
+        <button type="submit" class="btn btn-primary" style="padding:.75rem 2rem;font-weight:600;min-width:200px">
+          {% if object %}Update Article{% else %}Save Article{% endif %}
+        </button>
+        <div style="margin-top:1rem">
+          <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'articles:list' %}{% endif %}" class="hint">Cancel and go back</a>
+        </div>
       </div>
     </form>
   </section>
@@ -165,67 +157,88 @@
   </aside>
 </div>
 
-<!-- JavaScript for cover image preview -->
+<script src="{% static 'vendor/quill-1.3.7/quill.min.js' %}"></script>
 <script>
-document.getElementById('id_cover_image').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (file) {
+(function () {
+  const form = document.getElementById("article-form");
+  const coverInput = document.getElementById("id_cover_image");
+  const hiddenBodyInput = document.getElementById("id_body");
+
+  // Cover image preview
+  coverInput.addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
     const reader = new FileReader();
-    reader.onload = function(event) {
-      const preview = document.getElementById('cover-preview');
-      preview.innerHTML = `<img src="${event.target.result}" alt="cover" style="width:100%;height:100%;object-fit:cover">`;
+    reader.onload = function (event) {
+      const preview = document.getElementById("cover-preview");
+      preview.innerHTML = "";
+      const img = document.createElement("img");
+      img.src = event.target.result;
+      img.alt = "cover";
+      img.style.cssText = "width:100%;height:100%;object-fit:cover";
+      preview.appendChild(img);
     };
     reader.readAsDataURL(file);
-  }
-});
+  });
 
-// Auto-save draft periodically
-let autoSaveTimer;
-const articleForm = document.getElementById('article-form');
-
-// Debounced autosave
-function autoSave() {
-  clearTimeout(autoSaveTimer);
-  autoSaveTimer = setTimeout(function() {
-    // Only autosave if it's a draft
-    const status = document.querySelector('select[name="status"]').value;
-    if (status === 'draft') {
-      console.log('Auto-saving draft...');
-      // In a real app, you'd send this via AJAX
-    }
-  }, 5000); // Wait 5 seconds after last change
-}
-
-// Listen to form changes
-articleForm.addEventListener('input', autoSave);
-
-  // Quill initialization
-  const quill = new Quill('#quill-editor', {
-    theme: 'snow',
-    placeholder: 'Write your article here...',
+  // Quill editor
+  const quill = new Quill("#quill-editor", {
+    theme: "snow",
+    placeholder: "Write your article here...",
     modules: {
-      toolbar: [
-        [{ header: [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline'],
-        ['link', 'image', 'blockquote', 'code-block'],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        ['clean']
-      ]
+      toolbar: {
+        container: [
+          [{ header: [1, 2, 3, false] }],
+          ["bold", "italic", "underline", "strike"],
+          ["link", "image", "video", "blockquote", "code-block"],
+          [{ list: "ordered" }, { list: "bullet" }],
+          [{ align: [] }],
+          ["clean"]
+        ],
+        handlers: { image: uploadImage }
+      }
     }
   });
 
-  // Django textarea
-  const hiddenBodyInput = document.getElementById('id_body');
+  // Images are uploaded to the server instead of being stored as huge base64 strings
+  function uploadImage() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/jpeg,image/png,image/gif,image/webp";
+    input.onchange = function () {
+      const file = input.files[0];
+      if (!file) return;
+      const data = new FormData();
+      data.append("file", file);
+      fetch("{% url 'articles:upload-media' %}", {
+        method: "POST",
+        body: data,
+        headers: { "X-CSRFToken": csrftoken },
+        credentials: "same-origin"
+      })
+        .then(parseJsonOrLogin)
+        .then(function (res) {
+          if (res.error) { alert(res.error); return; }
+          const range = quill.getSelection(true);
+          quill.insertEmbed(range.index, "image", res.url, "user");
+          quill.setSelection(range.index + 1);
+        })
+        .catch(function () { alert("Image upload failed. Please try again."); });
+    };
+    input.click();
+  }
 
-  // Agar edit mode bo‘lsa eski contentni yuklash
+  // Edit mode / re-rendered form: load the existing content
   if (hiddenBodyInput.value) {
     quill.root.innerHTML = hiddenBodyInput.value;
   }
 
-  // Form submit bo‘lishidan oldin contentni textarea ga yozish
-  document.getElementById('article-form').addEventListener('submit', function () {
-    hiddenBodyInput.value = quill.root.innerHTML;
+  form.addEventListener("submit", function () {
+    hiddenBodyInput.value = quill.getText().trim() || quill.root.querySelector("img,iframe")
+      ? quill.root.innerHTML
+      : "";
   });
+})();
 </script>
 
 <!-- Quill Editor Styles -->
@@ -288,6 +301,20 @@ articleForm.addEventListener('input', autoSave);
   outline: none;
   line-height: 1.3;
   margin-bottom: 0.5rem;
+}
+
+.publish-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--soft);
+  border-radius: var(--radius);
+}
+
+@media (max-width: 640px) {
+  .publish-settings { grid-template-columns: 1fr; }
+  .editor-title { font-size: 1.75rem; }
 }
 
 .editor-excerpt {

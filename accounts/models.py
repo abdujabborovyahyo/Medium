@@ -1,12 +1,8 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.utils import timezone
-
-# Create your models here.
+from django.db import models
 
 
 class CustomUser(AbstractUser):
-    # Extend later if needed; we use a profile model for richer fields
     bio = models.TextField(blank=True)
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
     website = models.URLField(blank=True)

@@ -1,8 +1,40 @@
 {% extends "core/base.html" %}
+
+{% block title %}Log in · MediumClone{% endblock %}
+
 {% block content %}
-  <h2>Login</h2>
-  <form method="post">{% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Log in</button>
-  </form>
+<div class="auth-page">
+  <div class="auth-card">
+    {% include "accounts/_auth_aside.html" %}
+
+    <section class="auth-form-side">
+      <h1>Welcome back</h1>
+      <p class="auth-subtitle">Log in to continue reading and writing.</p>
+
+      <form method="post" class="auth-form" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+        {% if form.non_field_errors %}
+          <div class="form-errors">{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>
+        {% endif %}
+
+        {% include "accounts/_field.html" with field=form.username %}
+        {% include "accounts/_field.html" with field=form.password %}
+
+        <label class="auth-show-password">
+          <input type="checkbox" data-toggle-password> Show password
+        </label>
+
+        <button type="submit" class="btn btn-primary auth-submit">Log in</button>
+      </form>
+
+      <p class="auth-switch">
+        New here?
+        <a href="{% url 'accounts:signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Create an account</a>
+      </p>
+    </section>
+  </div>
+</div>
 {% endblock %}
+

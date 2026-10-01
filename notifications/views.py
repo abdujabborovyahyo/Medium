@@ -4,8 +4,8 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
 from django.contrib import messages
 from .models import Notification, ReadingHistory, UserFollowing
-from django.db.models import Q
 from django.contrib.auth import get_user_model
+from django.utils.http import url_has_allowed_host_and_scheme
 
 User = get_user_model()
 
@@ -37,21 +37,22 @@ def follow_user(request, user_id):
         following_rel.delete()
         is_following = False
         msg = f"You unfollowed {user_to_follow.username}."
-        status_msg = "success"
     else:
         # New follow
         is_following = True
         msg = f"You are now following {user_to_follow.username}."
-        status_msg = "success"
 
-        # Create notification for the followed user
-        Notification.objects.create(
-            recipient=user_to_follow,
-            sender=request.user,
-            notification_type="follow",
-            title=f"{request.user.username} started following you",
-            description=""
-        )
+        # Notify the followed user, but don't spam them on follow/unfollow/follow toggling
+        already_notified = Notification.objects.filter(
+            recipient=user_to_follow, sender=request.user, notification_type=Notification.Type.FOLLOW
+        ).exists()
+        if not already_notified:
+            Notification.objects.create(
+                recipient=user_to_follow,
+                sender=request.user,
+                notification_type=Notification.Type.FOLLOW,
+                title=f"{request.user.username} started following you",
+            )
 
     # Handle AJAX requests (return JSON)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -63,7 +64,11 @@ def follow_user(request, user_id):
 
     # Handle regular form submissions (redirect with message)
     messages.success(request, msg)
-    return redirect(request.META.get('HTTP_REFERER', 'core:home'))
+    # Only redirect back to our own site (the Referer header can be anything)
+    referer = request.META.get("HTTP_REFERER", "")
+    if url_has_allowed_host_and_scheme(referer, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return redirect(referer)
+    return redirect("accounts:profile", username=user_to_follow.username)
 
 
 @login_required

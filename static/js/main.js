@@ -17,13 +17,24 @@ function getCookie(name) {
 }
 const csrftoken = getCookie("csrftoken");
 
+// Anonymous users get redirected to the login page by @login_required.
+// fetch() follows that redirect and receives HTML, so send them to the login page instead.
+function parseJsonOrLogin(res) {
+  const type = res.headers.get("content-type") || "";
+  if (res.redirected || !type.includes("application/json")) {
+    window.location.href = "/accounts/login/?next=" + encodeURIComponent(window.location.pathname);
+    return Promise.reject(new Error("Login required"));
+  }
+  return res.json();
+}
+
 // ==========================================
 // 2. TUGMALAR UCHUN BOSISH (CLICK) HODISALARI
 // ==========================================
 document.addEventListener("click", function (e) {
 
   // A. LAYK TUGMASI (Like Toggle)
-  const likeBtn = e.target.closest("#like-btn");
+  const likeBtn = e.target.closest("[data-like-btn]");
   if (likeBtn) {
     const articleId = likeBtn.dataset.articleId;
     fetch(`/interactions/like-toggle/${articleId}/`, {
@@ -31,7 +42,7 @@ document.addEventListener("click", function (e) {
       headers: {"X-CSRFToken": csrftoken, "Accept": "application/json"},
       credentials: "same-origin",
     })
-      .then(res => res.json())
+      .then(parseJsonOrLogin)
       .then(data => {
         if (data.liked) likeBtn.classList.add("liked"); else likeBtn.classList.remove("liked");
         const countEl = likeBtn.querySelector(".count");
@@ -50,7 +61,7 @@ document.addEventListener("click", function (e) {
       headers: {"X-CSRFToken": csrftoken, "Accept": "application/json"},
       credentials: "same-origin",
     })
-    .then(res => res.json())
+    .then(parseJsonOrLogin)
     .then(data => {
       if (data.saved) bBtn.classList.add("saved"); else bBtn.classList.remove("saved");
     })
@@ -66,7 +77,7 @@ document.addEventListener("click", function (e) {
       method: "POST",
       headers: {"X-CSRFToken": csrftoken, "Accept": "application/json"},
       credentials: "same-origin",
-    }).then(res => res.json()).then(data => {
+    }).then(parseJsonOrLogin).then(data => {
         if (!data.saved) {
           const card = removeBookmarkBtn.closest(".card");
           if (card) card.remove();
@@ -80,7 +91,7 @@ document.addEventListener("click", function (e) {
     const articleId = addToListBtn.dataset.articleId || addToListBtn.getAttribute("data-article-id");
     if (!articleId) return;
     const listName = prompt("Enter a list name to save this story (existing lists will be reused):", "");
-    if (listName === null) return;
+    if (listName === null || !listName.trim()) return;
     const form = new FormData();
     form.append("article_id", articleId);
     form.append("list_name", listName);
@@ -90,7 +101,7 @@ document.addEventListener("click", function (e) {
       body: form,
       headers: {"X-CSRFToken": csrftoken},
       credentials: "same-origin",
-    }).then(res => res.json())
+    }).then(parseJsonOrLogin)
       .then(data => {
         if (data && data.success) {
           alert(`Saved to list "${data.list_name}".`);
@@ -119,7 +130,7 @@ document.addEventListener("click", function (e) {
       body: form,
       headers: {"X-CSRFToken": csrftoken},
       credentials: "same-origin",
-    }).then(res => res.json())
+    }).then(parseJsonOrLogin)
       .then(data => {
         if (data && data.success) {
           const card = removeFromListBtn.closest(".card");
@@ -148,7 +159,7 @@ document.addEventListener("click", function (e) {
       },
       credentials: "same-origin",
     })
-      .then((res) => res.json())
+      .then(parseJsonOrLogin)
       .then((data) => {
         if (data.error) {
           alert(data.error);
@@ -173,90 +184,32 @@ document.addEventListener("click", function (e) {
 });
 
 // ==========================================
-// 3. EDITOR VA MEDIA YUKLASH SAHIFASI YUKLANGANDA
+// 3. NOTIFICATIONS (o'qilmagan bildirishnomalar badge'i va dropdown)
 // ==========================================
 document.addEventListener("DOMContentLoaded", function () {
-  const editor = document.getElementById("editor");
-  const hiddenBody = document.querySelector("input[name='body_html']");
-  const articleForm = document.getElementById("article-form");
-  const mediaInput = document.getElementById("media-upload-input");
-  const coverInput = document.getElementById("id_cover_image");
-  const coverPreview = document.getElementById("cover-preview");
-
-  if (articleForm && editor && hiddenBody) {
-    articleForm.addEventListener("submit", function () {
-      hiddenBody.value = editor.innerHTML.trim();
+  const notifBtn = document.getElementById("notifications-btn");
+  const notifMenu = document.getElementById("notifications-menu");
+  if (notifBtn && notifMenu) {
+    notifBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      notifMenu.style.display = notifMenu.style.display === "none" ? "block" : "none";
+    });
+    document.addEventListener("click", function (e) {
+      if (!notifBtn.parentElement.contains(e.target)) notifMenu.style.display = "none";
     });
   }
 
-  if (mediaInput && editor) {
-    mediaInput.addEventListener("change", function (ev) {
-      const file = ev.target.files[0];
-      if (!file) return;
-      const form = new FormData();
-      form.append("file", file);
-      const loader = document.createElement("div");
-      loader.textContent = "Uploading...";
-      editor.appendChild(loader);
-
-      fetch("/articles/upload-media/", {
-        method: "POST",
-        body: form,
-        headers: {"X-CSRFToken": csrftoken},
-        credentials: "same-origin",
-      }).then(res => res.json()).then(data => {
-        loader.remove();
-        if (data && data.url) {
-          if (data.type === "image") {
-            const img = document.createElement("img");
-            img.src = data.url;
-            img.style.maxWidth = "100%";
-            img.style.display = "block";
-            editor.appendChild(img);
-          } else if (data.type === "video") {
-            const video = document.createElement("video");
-            video.controls = true;
-            const src = document.createElement("source");
-            src.src = data.url;
-            video.appendChild(src);
-            video.style.maxWidth = "100%";
-            editor.appendChild(video);
-          } else {
-            // Generic file link
-            const a = document.createElement("a");
-            a.href = data.url;
-            a.textContent = data.name || "Download file";
-            a.target = "_blank";
-            editor.appendChild(a);
-          }
-        } else {
-          alert(data.error || "Upload failed.");
-        }
-      }).catch(err => {
-        loader.remove();
-        console.error("Media upload failed:", err);
-        alert("Upload failed. Please try again.");
+  // "Show password" checkbox on login / signup forms
+  document.querySelectorAll("[data-toggle-password]").forEach(function (box) {
+    box.addEventListener("change", function () {
+      box.closest("form").querySelectorAll("input[name^='password']").forEach(function (input) {
+        input.type = box.checked ? "text" : "password";
       });
     });
-  }
+  });
 
-  if (coverInput && coverPreview) {
-    coverInput.addEventListener("change", function (ev) {
-      const file = ev.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        coverPreview.src = e.target.result;
-        coverPreview.style.display = "block";
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // ==========================================
-  // 4. NOTIFICATIONS BADGE (o'qilmagan bildirishnomalar)
-  // ==========================================
   function loadNotificationsBadge() {
+    if (!document.getElementById("notif-badge")) return;  // anonymous user
     fetch("/notifications/unread-count/", {credentials: "same-origin"})
       .then(res => res.json())
       .then(data => {
