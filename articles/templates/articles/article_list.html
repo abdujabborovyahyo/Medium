@@ -58,24 +58,20 @@
 
             <!-- Show excerpt or plain text from Quill body -->
             <p class="article-excerpt">
-              {% if article.excerpt %}
-                {{ article.excerpt|truncatewords:40 }}
-              {% else %}
-                {{ article.body.html|striptags|truncatewords:40 }}
-              {% endif %}
+              {{ article.summary|truncatewords:40 }}
             </p>
 
             <div class="article-actions">
-          <button id="like-btn" class="like-btn {% if object.user_has_liked %}liked{% endif %}" data-article-id="{{ object.id }}">
-              <span class="heart">❤</span>
-              <span class="count">{{ object.likes.count }}</span>
-          </button>
-                      <button id="bookmark-btn"
-                        class="btn {% if object.user_has_bookmarked %}saved{% endif %}"
-                        data-article-id="{{ object.id }}" title="Save to library">
-                        <span class="icon"></span>
-                        <span class="label">Save</span>
-                    </button>
+              <button type="button" data-like-btn class="like-btn {% if article.user_has_liked %}liked{% endif %}" data-article-id="{{ article.id }}">
+                <span class="heart">❤</span>
+                <span class="count">{{ article.likes_total }}</span>
+              </button>
+              <button type="button" data-bookmark-btn
+                class="btn bookmark-btn {% if article.user_has_bookmarked %}saved{% endif %}"
+                data-article-id="{{ article.id }}" title="Save to library">
+                <span class="icon"></span>
+                <span class="label">Save</span>
+              </button>
             </div>
           </div>
         </div>
@@ -89,13 +85,13 @@
     {% if is_paginated %}
       <div class="pagination">
         {% if page_obj.has_previous %}
-          <a href="?page=1">First</a>
-          <a href="?page={{ page_obj.previous_page_number }}">← Prev</a>
+          <a href="?{% if query_string %}{{ query_string }}&{% endif %}page=1">First</a>
+          <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}">← Prev</a>
         {% endif %}
         <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
         {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}">Next →</a>
-          <a href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+          <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}">Next →</a>
+          <a href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.paginator.num_pages }}">Last</a>
         {% endif %}
       </div>
     {% endif %}

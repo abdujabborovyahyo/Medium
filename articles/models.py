@@ -1,58 +1,70 @@
-# Create your models here.
-from django.db import models
-from django.utils.text import slugify
-from django.urls import reverse
 from django.conf import settings
+from django.db import models
+from django.db.models import Q
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import strip_tags
+from django.utils.text import slugify
 
-from django.db import models
-from django.utils.text import slugify
-from django.urls import reverse
-from django.conf import settings
-from django.utils import timezone
-from django_quill.fields import QuillField
+from .sanitizers import sanitize_html
 
 
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
     slug = models.SlugField(max_length=60, unique=True)
 
+    class Meta:
+        ordering = ["name"]
+
     def __str__(self):
         return self.name
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            base = slugify(self.name)[:50] or "tag"
+            slug = base
+            counter = 1
+            while Tag.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{counter}"
+                counter += 1
+            self.slug = slug
         super().save(*args, **kwargs)
 
 
+class ArticleQuerySet(models.QuerySet):
+    def published(self):
+        return self.filter(status=Article.Status.PUBLISHED)
+
+    def visible_to(self, user):
+        """Published articles + the user's own drafts."""
+        if user.is_authenticated:
+            return self.filter(Q(status=Article.Status.PUBLISHED) | Q(author=user))
+        return self.published()
+
+
 class Article(models.Model):
-    STATUS_CHOICES = (("draft", "Draft"), ("published", "Published"))
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        PUBLISHED = "published", "Published"
 
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="articles")
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=300, unique=True, blank=True)
-
-    # Changed from TextField to QuillField for rich text editing
+    # Sanitized HTML produced by the Quill editor (see sanitizers.py)
     body = models.TextField()
-
     excerpt = models.TextField(blank=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="draft")
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT)
     tags = models.ManyToManyField(Tag, blank=True, related_name="articles")
 
-    # Member-only flag
-    is_member_only = models.BooleanField(
-        default=False,
-        help_text="Only followers can read this article"
-    )
-
-    # Cover image (optional)
+    is_member_only = models.BooleanField(default=False, help_text="Only followers can read this article")
     cover_image = models.ImageField(upload_to="article_covers/", blank=True, null=True)
 
     views_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     published_at = models.DateTimeField(blank=True, null=True)
+
+    objects = ArticleQuerySet.as_manager()
 
     class Meta:
         ordering = ["-published_at", "-created_at"]
@@ -63,31 +75,48 @@ class Article(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base = slugify(self.title)[:200]
-            slug = base
-            counter = 1
-            while Article.objects.filter(slug=slug).exists():
-                slug = f"{base}-{counter}"
-                counter += 1
-            self.slug = slug
-        if self.status == "published" and not self.published_at:
+            self.slug = self._unique_slug()
+        self.body = sanitize_html(self.body)
+        if self.status == self.Status.PUBLISHED and not self.published_at:
             self.published_at = timezone.now()
         super().save(*args, **kwargs)
+
+    def _unique_slug(self):
+        base = slugify(self.title)[:200] or "article"
+        slug = base
+        counter = 1
+        while Article.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            slug = f"{base}-{counter}"
+            counter += 1
+        return slug
 
     def get_absolute_url(self):
         return reverse("articles:detail", kwargs={"slug": self.slug})
 
+    @property
+    def is_published(self):
+        return self.status == self.Status.PUBLISHED
+
+    @property
+    def summary(self):
+        """Excerpt, or the beginning of the body as plain text."""
+        return self.excerpt or strip_tags(self.body)
+
     def can_view(self, user):
-        """Check if a user can view this article."""
+        """Check if a user can read this article."""
+        if user and user.is_authenticated and user == self.author:
+            return True
+        if not self.is_published:
+            return False
         if not self.is_member_only:
             return True
-        if not user or not user.is_authenticated :
+        if not user or not user.is_authenticated:
             return False
-        if user == self.author:
-            return True
         return self.author.followers.filter(follower=user).exists()
 
     def get_root_comments(self):
-        return self.comments.filter(parent__isnull=True)\
-    .select_related("author")\
-    .prefetch_related("children")
+        return (
+            self.comments.filter(parent__isnull=True)
+            .select_related("author")
+            .prefetch_related("children__author")
+        )

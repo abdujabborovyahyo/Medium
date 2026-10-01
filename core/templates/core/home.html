@@ -56,19 +56,19 @@
             </div>
 
             <h2><a href="{{ article.get_absolute_url }}">{{ article.title }}</a></h2>
-            <p class="article-excerpt">{{ article.excerpt|default:article.body|truncatewords:40 }}</p>
+            <p class="article-excerpt">{{ article.summary|truncatewords:40 }}</p>
 
             <div class="article-actions">
-              <button id="like-btn" class="like-btn {% if object.user_has_liked %}liked{% endif %}" data-article-id="{{ object.id }}">
+              <button type="button" data-like-btn class="like-btn {% if article.user_has_liked %}liked{% endif %}" data-article-id="{{ article.id }}">
                 <span class="heart">♥</span>
-                <span class="count">{{ object.likes.count }}</span>
+                <span class="count">{{ article.likes_total }}</span>
               </button>
-              <button id="bookmark-btn"
-                class="btn {% if object.user_has_bookmarked %}saved{% endif %}"
-                data-article-id="{{ object.id }}" title="Save to library">
+              <button type="button" data-bookmark-btn
+                class="btn bookmark-btn {% if article.user_has_bookmarked %}saved{% endif %}"
+                data-article-id="{{ article.id }}" title="Save to library">
                 <span class="icon"></span>
                 <span class="label">Save</span>
-            </button>
+              </button>
               {% if user.is_authenticated %}
                 <button class="btn" data-article-id="{{ article.id }}" data-add-to-list>Save to list</button>
               {% endif %}

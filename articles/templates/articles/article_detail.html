@@ -41,12 +41,12 @@
 
         <!-- Actions -->
         <div class="article-actions">
-          <button id="like-btn" class="like-btn {% if object.user_has_liked %}liked{% endif %}" data-article-id="{{ object.id }}">
+          <button id="like-btn" data-like-btn class="like-btn {% if object.user_has_liked %}liked{% endif %}" data-article-id="{{ object.id }}">
             <span class="heart">❤</span>
-            <span class="count">{{ object.likes.count }}</span>
+            <span class="count">{{ object.likes_total }}</span>
           </button>
           <button id="bookmark-btn"
-              class="btn {% if object.user_has_bookmarked %}saved{% endif %}"
+              class="btn bookmark-btn {% if object.user_has_bookmarked %}saved{% endif %}"
               data-article-id="{{ object.id }}" data-bookmark-btn title="Save to library">
             <span class="icon"></span>
             <span class="label">Save</span>
@@ -63,11 +63,8 @@
 
       <!-- Article body -->
       <div class="body content" style="margin-bottom:2rem">
-        {% if object.body.html %}
-          {{ object.body.html|safe }}
-        {% else %}
-          {{ object.body|safe }}
-        {% endif %}
+        {# body is sanitized with nh3 in Article.save(), so |safe is OK here #}
+        {{ object.body|safe }}
       </div>
 
       <!-- Tags -->
@@ -81,19 +78,19 @@
       <!-- COMMENTS SECTION                                 -->
       <!-- ================================================ -->
       <section id="comments" class="comments">
-        <h3>Comments ({{ object.comments.count }})</h3>
+        <h3>Comments ({{ object.comments_total }})</h3>
 
         <!-- Root comment form -->
         {% if user.is_authenticated %}
           <form method="post" action="{% url 'comments:add' %}" class="comment-form root-comment-form">
             {% csrf_token %}
-            <textarea name="body" rows="3" placeholder="Share your thoughts..."></textarea>
+            <textarea name="body" rows="3" maxlength="5000" placeholder="Share your thoughts..." required></textarea>
             <input type="hidden" name="article_id" value="{{ object.id }}">
             <button type="submit" class="btn btn-primary">Post comment</button>
           </form>
         {% else %}
           <p class="login-to-comment">
-            <a href="{% url 'accounts:login' %}?next={{ request.path }}">Log in</a> to comment.
+            <a href="{% url 'accounts:login' %}?next={{ request.path|urlencode }}">Log in</a> to comment.
           </p>
         {% endif %}
 

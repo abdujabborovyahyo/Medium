@@ -1,8 +1,45 @@
 {% extends "core/base.html" %}
+
+{% block title %}Create an account · MediumClone{% endblock %}
+
 {% block content %}
-  <h2>Sign up</h2>
-  <form method="post">{% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Sign up</button>
-  </form>
+<div class="auth-page">
+  <div class="auth-card">
+    {% include "accounts/_auth_aside.html" %}
+
+    <section class="auth-form-side">
+      <h1>Join MediumClone</h1>
+      <p class="auth-subtitle">Create a free account to start reading and writing.</p>
+
+      <form method="post" class="auth-form" novalidate>
+        {% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+        {% if form.non_field_errors %}
+          <div class="form-errors">{% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>
+        {% endif %}
+
+        {% include "accounts/_field.html" with field=form.username %}
+        {% include "accounts/_field.html" with field=form.email %}
+
+        <div class="auth-row">
+          {% include "accounts/_field.html" with field=form.password1 %}
+          {% include "accounts/_field.html" with field=form.password2 %}
+        </div>
+
+        <label class="auth-show-password">
+          <input type="checkbox" data-toggle-password> Show passwords
+        </label>
+
+        <button type="submit" class="btn btn-primary auth-submit">Create account</button>
+      </form>
+
+      <p class="auth-switch">
+        Already have an account?
+        <a href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Log in</a>
+      </p>
+    </section>
+  </div>
+</div>
 {% endblock %}
+

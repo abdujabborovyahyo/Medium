@@ -6,10 +6,9 @@
   <title>{% block title %}MediumClone{% endblock %}</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="icon" href="{% static 'imgs/img.png' %}">
   <script src="{% static 'js/main.js' %}" defer></script>
-  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
-  <link rel="icon" href="/static/imgs/img.png">
-  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
   <header class="site-header">
@@ -40,7 +39,7 @@
           </div>
 
           <a class="nav-link" href="{% url 'accounts:profile' user.username %}">👤 {{ user.username }}</a>
-          <a class="nav-link" href="{% url 'accounts:logout' %}">🚪 Logout</a>
+          <a class="nav-link" href="{% url 'accounts:logout' %}">🚪 Log out</a>
         {% else %}
           <a class="nav-link" href="{% url 'accounts:login' %}">Log in</a>
           <a class="nav-link btn-signup" href="{% url 'accounts:signup' %}">Get started</a>
@@ -51,12 +50,10 @@
 
   <main class="main">
     {% if messages %}
-      <div style="max-width:var(--max-width);margin:0 auto;padding:0 1rem">
-        <div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:var(--radius);padding:1rem;margin:1rem 0">
-          {% for m in messages %}
-            <div>{{ m }}</div>
-          {% endfor %}
-        </div>
+      <div class="messages">
+        {% for m in messages %}
+          <div class="message message-{{ m.level_tag }}" role="status">{{ m }}</div>
+        {% endfor %}
       </div>
     {% endif %}
 
@@ -65,7 +62,7 @@
 
   <footer class="site-footer">
     <div class="footer-inner">
-      <div>© {{ now|date:"Y" }} MediumClone — A Medium Clone</div>
+      <div>© {% now "Y" %} MediumClone — A Medium Clone</div>
       <div class="foot-links">
         <a href="{% url 'core:intro' %}">About</a>
         <a href="#">Privacy</a>
@@ -74,42 +71,6 @@
     </div>
   </footer>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      loadNotificationsBadge();
-      setInterval(loadNotificationsBadge, 30000);
-    });
-
-    function loadNotificationsBadge() {
-      {% if user.is_authenticated %}
-        fetch("/notifications/unread-count/")
-          .then(res => res.json())
-          .then(data => {
-            const badge = document.getElementById("notif-badge");
-            if (data.unread_count > 0) {
-              badge.textContent = data.unread_count;
-              badge.style.display = "inline-block";
-            } else {
-              badge.style.display = "none";
-            }
-          });
-      {% endif %}
-    }
-
-    document.getElementById("notifications-btn").addEventListener("click", function(e) {
-      e.preventDefault();
-      const menu = document.getElementById("notifications-menu");
-      menu.style.display = menu.style.display === "none" ? "block" : "none";
-    });
-
-    document.addEventListener("click", function(e) {
-      const notifContainer = document.querySelector(".notifications-dropdown");
-      if (notifContainer && !notifContainer.contains(e.target)) {
-        document.getElementById("notifications-menu").style.display = "none";
-      }
-    });
-  </script>
-<!-- In <head> section, add: -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  {% block extra_js %}{% endblock %}
 </body>
 </html>

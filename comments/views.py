@@ -1,54 +1,66 @@
-# Create your views here.
-
-from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect
 from django.template.defaultfilters import truncatewords
-from django.urls import reverse
 from django.views.decorators.http import require_POST
+
 from articles.models import Article
+from notifications.models import Notification
 from .models import Comment
 
-from notifications.models import Notification
+MAX_COMMENT_LENGTH = 5000
+
 
 @require_POST
 @login_required
 def add_comment(request):
     body = request.POST.get("body", "").strip()
-    article_id = request.POST.get("article_id")
-    parent_id = request.POST.get("parent_id")
-    article = get_object_or_404(Article, pk=article_id)
-    if body:
-        parent = None
-        if parent_id:
-            try:
-                parent = Comment.objects.get(pk=parent_id, article=article)
-            except Comment.DoesNotExist:
-                parent = None
-        comment = Comment.objects.create(article=article, author=request.user, body=body, parent=parent)
+    article_id = request.POST.get("article_id", "")
+    parent_id = request.POST.get("parent_id", "")
 
-        # Notify article author
-        if article.author != request.user:
-            Notification.objects.create(
-                recipient=article.author,
-                sender=request.user,
-                notification_type="comment",
-                article=article,
-                comment=comment,
-                title=f"{request.user.username} commented on your article",
-                description=truncatewords(body, 15)
-            )
+    if not article_id.isdigit():
+        raise Http404
+    article = get_object_or_404(Article.objects.published(), pk=article_id)
+    # Same rule as reading: can't comment on a member-only story you can't see
+    if not article.can_view(request.user):
+        raise Http404
 
-        # Notify parent comment author if this is a reply
-        if parent and parent.author != request.user:
-            Notification.objects.create(
-                recipient=parent.author,
-                sender=request.user,
-                notification_type="reply",
-                article=article,
-                comment=comment,
-                title=f"{request.user.username} replied to your comment",
-                description=truncatewords(body, 15)
-            )
+    redirect_url = article.get_absolute_url() + "#comments"
+    if not body:
+        return redirect(redirect_url)
+    if len(body) > MAX_COMMENT_LENGTH:
+        messages.error(request, f"Comment is too long (max {MAX_COMMENT_LENGTH} characters).")
+        return redirect(redirect_url)
 
-    url = article.get_absolute_url() + "#comments"
-    return redirect(url)
+    parent = None
+    if parent_id.isdigit():
+        parent = Comment.objects.filter(pk=parent_id, article=article).select_related("author").first()
+
+    comment = Comment.objects.create(article=article, author=request.user, body=body, parent=parent)
+    description = truncatewords(body, 15)
+
+    if article.author_id != request.user.pk:
+        Notification.objects.create(
+            recipient=article.author,
+            sender=request.user,
+            notification_type=Notification.Type.COMMENT,
+            article=article,
+            comment=comment,
+            title=f"{request.user.username} commented on your article",
+            description=description,
+        )
+
+    # Reply: notify the parent comment's author (unless it's the same person or the deleted user)
+    if parent and parent.author_id and parent.author_id not in (request.user.pk, article.author_id):
+        Notification.objects.create(
+            recipient=parent.author,
+            sender=request.user,
+            notification_type=Notification.Type.REPLY,
+            article=article,
+            comment=comment,
+            title=f"{request.user.username} replied to your comment",
+            description=description,
+        )
+
+    return redirect(f"{article.get_absolute_url()}#comment-{comment.pk}")

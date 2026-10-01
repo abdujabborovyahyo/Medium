@@ -6,4 +6,4 @@ class StatsConfig(AppConfig):
     name = 'stats'
 
     def ready(self):
-        import stats.signals
+        from . import signals  # noqa: F401  (registers signal handlers)

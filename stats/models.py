@@ -1,10 +1,8 @@
-from django.db import models
-
-# Create your models here.
-from django.db import models
 from django.conf import settings
+from django.db import models
+from django.utils import timezone
+
 from articles.models import Article
-from datetime import date
 
 
 class DailyStats(models.Model):
@@ -14,7 +12,7 @@ class DailyStats(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="daily_stats")
     article = models.ForeignKey(Article, on_delete=models.CASCADE, null=True, blank=True, related_name="daily_stats")
 
-    date = models.DateField(default=date.today)
+    date = models.DateField(default=timezone.localdate)
     views = models.PositiveIntegerField(default=0)
     reads = models.PositiveIntegerField(default=0)  # completed reads
     likes = models.PositiveIntegerField(default=0)

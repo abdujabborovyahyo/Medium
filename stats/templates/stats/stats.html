@@ -178,7 +178,8 @@
   </aside>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ chart_data|json_script:"chart-data" }}
+<script src="{% static 'vendor/chartjs-4.5.1/chart.umd.min.js' %}"></script>
 <script>
   // Tab switching
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -192,7 +193,7 @@
   });
 
   // Chart.js initialization
-  const chartData = {{ chart_data|safe }};
+  const chartData = JSON.parse(document.getElementById('chart-data').textContent);
   const ctx = document.getElementById('statsChart').getContext('2d');
   new Chart(ctx, {
     type: 'line',

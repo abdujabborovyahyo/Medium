@@ -1,0 +1,10 @@
+{# Renders one form field: label, input, help text and errors #}
+<div class="auth-field{% if field.errors %} has-error{% endif %}">
+  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {{ field }}
+  {% if field.errors %}
+    {% for error in field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+  {% elif field.help_text %}
+    <p class="field-help">{{ field.help_text|safe }}</p>
+  {% endif %}
+</div>

@@ -37,7 +37,7 @@
           <article class="card">
             <h3><a href="{{ a.get_absolute_url }}">{{ a.title }}</a></h3>
             <p class="meta">Published {{ a.published_at|date:"M j, Y" }}</p>
-            <p>{{ a.excerpt|default:a.body|truncatewords:30 }}</p>
+            <p>{{ a.summary|truncatewords:30 }}</p>
           </article>
         {% empty %}
           <p>No published stories yet.</p>
