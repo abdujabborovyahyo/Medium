@@ -1,120 +1,36 @@
 {% extends "core/base.html" %}
 {% block content %}
-<div style="display:flex;gap:0;width:100%">
-  <!-- Left Sidebar -->
-  <aside class="left-sidebar">
-    <div class="card">
-      <ul>
-        <li class="nav-item"><a href="{% url 'core:home' %}" class="active">🏠 Home</a></li>
-        <li class="nav-item"><a href="{% url 'interactions:library' %}">📚 Library</a></li>
-        {% if user.is_authenticated %}
-          <li class="nav-item"><a href="{% url 'interactions:lists' %}">📋 Lists</a></li>
-          <li class="nav-item"><a href="{% url 'accounts:profile' user.username %}">👤 Profile</a></li>
-          <li class="nav-item"><a href="{% url 'stats:dashboard' %}">📊 Stats</a></li>
-          <li class="nav-item"><a href="{% url 'notifications:list' %}">🔔 Notifications</a></li>
-        {% endif %}
-      </ul>
-    </div>
-  </aside>
+<div class="page-layout">
+  {% include "core/_side_nav.html" with active="home" %}
 
-  <!-- Center Feed -->
   <section class="center-feed">
-    <h1 style="margin-bottom:2rem">Latest Stories</h1>
+    <h1 class="page-title">Latest Stories</h1>
 
     <div class="article-feed">
       {% for article in articles %}
-        <div class="article-item">
-          <!-- Article Cover Image -->
-          {% if article.cover_image %}
-            <div class="article-cover">
-              <a href="{{ article.get_absolute_url }}" style="display:block;width:100%;height:100%;overflow:hidden">
-                <img src="{{ article.cover_image.url }}" alt="{{ article.title }}" loading="lazy">
-              </a>
-            </div>
-          {% else %}
-            <div class="article-cover">
-              <div style="width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:2rem">
-                📝
-              </div>
-            </div>
-          {% endif %}
-
-          <!-- Article Content -->
-          <div class="article-content">
-            <div class="article-meta">
-              <div class="article-author">
-                {% if article.author.avatar %}
-                  <div class="article-author-avatar">
-                    <img src="{{ article.author.avatar.url }}" alt="{{ article.author.username }}">
-                  </div>
-                {% else %}
-                  <div class="article-author-avatar">{{ article.author.username|slice:":1"|upper }}</div>
-                {% endif %}
-                <span><a href="{% url 'accounts:profile' article.author.username %}">{{ article.author.username }}</a></span>
-              </div>
-              <span>{{ article.published_at|date:"M j, Y" }}</span>
-            </div>
-
-            <h2><a href="{{ article.get_absolute_url }}">{{ article.title }}</a></h2>
-            <p class="article-excerpt">{{ article.summary|truncatewords:40 }}</p>
-
-            <div class="article-actions">
-              <button type="button" data-like-btn class="like-btn {% if article.user_has_liked %}liked{% endif %}" data-article-id="{{ article.id }}">
-                <span class="heart">♥</span>
-                <span class="count">{{ article.likes_total }}</span>
-              </button>
-              <button type="button" data-bookmark-btn
-                class="btn bookmark-btn {% if article.user_has_bookmarked %}saved{% endif %}"
-                data-article-id="{{ article.id }}" title="Save to library">
-                <span class="icon"></span>
-                <span class="label">Save</span>
-              </button>
-              {% if user.is_authenticated %}
-                <button class="btn" data-article-id="{{ article.id }}" data-add-to-list>Save to list</button>
-              {% endif %}
-            </div>
-          </div>
-        </div>
+        {% include "articles/_article_card.html" %}
       {% empty %}
-        <div class="card" style="padding:2rem;text-align:center">
-          <p>No articles yet. Be the first to write one!</p>
-        </div>
+        <div class="card empty-state">No articles yet. Be the first to write one!</div>
       {% endfor %}
     </div>
 
-    {% if is_paginated %}
-      <div class="pagination" style="margin-top:2rem">
-        {% if page_obj.has_previous %}
-          <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">← Previous</a>
-        {% endif %}
-        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-        {% if page_obj.has_next %}
-          <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next →</a>
-        {% endif %}
-      </div>
-    {% endif %}
+    <p class="text-center"><a href="{% url 'articles:list' %}" class="btn">See all articles →</a></p>
   </section>
 
-  <!-- Right Sidebar -->
   <aside class="right-sidebar">
     <div class="card">
-      <h3>📌 Featured</h3>
-      <p class="hint">Top stories this week</p>
-    </div>
-
-    <div class="card">
-      <h3>✍💎 Premium</h3>
-      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.5rem">
+      <h3>💎 Premium</h3>
+      <ul class="plain-list">
         <li><a href="{% url 'core:premium' %}">✅ Listen to audio narrations</a></li>
-        <li><a href="{% url 'core:premium' %}">✅ Read offline with the Medium app</a></li>
-        <li><a href="{% url 'core:premium' %}">✅ Access our Mastodon community</a></li>
+        <li><a href="{% url 'core:premium' %}">✅ Read offline</a></li>
+        <li><a href="{% url 'core:premium' %}">✅ Member-only stories</a></li>
       </ul>
     </div>
 
-    <div class="card" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:1.25rem">
-      <h3 style="color:white;margin:0">Start Writing</h3>
-      <p style="color:rgba(255,255,255,0.9);font-size:.9rem">Share your stories with the world.</p>
-      <a href="{% url 'articles:create' %}" class="btn btn-primary" style="display:inline-block;margin-top:.5rem">Write Now</a>
+    <div class="card promo-card">
+      <h3>Start Writing</h3>
+      <p>Share your stories with the world.</p>
+      <a href="{% url 'articles:create' %}" class="btn btn-primary">Write Now</a>
     </div>
   </aside>
 </div>

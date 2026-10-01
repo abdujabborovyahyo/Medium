@@ -34,3 +34,10 @@ class ToggleTests(TestCase):
         )
         self.assertTrue(response.json()["added"])
         self.assertEqual(self.client.get(reverse("interactions:library")).status_code, 200)
+
+    def test_create_list(self):
+        response = self.client.post(reverse("interactions:create-list"), {"name": "  Weekend  "})
+        data = response.json()
+        self.assertEqual(self.reader.reading_lists.get().name, "Weekend")
+        self.assertEqual(data["url"], reverse("interactions:reading-list-detail", args=[data["id"]]))
+        self.assertEqual(self.client.post(reverse("interactions:create-list"), {"name": ""}).status_code, 400)

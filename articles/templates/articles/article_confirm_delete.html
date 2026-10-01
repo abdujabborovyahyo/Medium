@@ -1,17 +1,14 @@
 {% extends "core/base.html" %}
+{% block title %}Delete “{{ object.title }}” · MediumClone{% endblock %}
 {% block content %}
-<div class="container center-sheet">
-  <div class="card" style="max-width:820px;margin:2rem auto;padding:1.5rem;">
-    <header style="display:flex;justify-content:space-between;align-items:center">
-      <div>
-        <h2 style="margin:0">Delete article?</h2>
-        <p class="hint" style="margin:0.25rem 0 0">This will permanently remove "<strong>{{ object.title }}</strong>". This action cannot be undone.</p>
-      </div>
-    </header>
+<div class="page-narrow sm">
+  <div class="card card-body">
+    <h2>Delete article?</h2>
+    <p class="hint">This will permanently remove “<strong>{{ object.title }}</strong>”. This action cannot be undone.</p>
 
-    <form method="post" style="margin-top:1rem;">
+    <form method="post">
       {% csrf_token %}
-      <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <div class="form-actions">
         <a class="btn" href="{{ object.get_absolute_url }}">Cancel</a>
         <button type="submit" class="btn btn-danger">Delete article</button>
       </div>

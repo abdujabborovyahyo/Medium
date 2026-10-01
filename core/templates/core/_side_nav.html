@@ -1,0 +1,16 @@
+{# Left sidebar navigation. Usage: {% include "core/_side_nav.html" with active="home" %} #}
+<aside class="left-sidebar">
+  <div class="card">
+    <ul>
+      <li class="nav-item"><a href="{% url 'core:home' %}"{% if active == "home" %} class="active"{% endif %}>🏠 Home</a></li>
+      <li class="nav-item"><a href="{% url 'articles:list' %}"{% if active == "articles" %} class="active"{% endif %}>📰 Articles</a></li>
+      {% if user.is_authenticated %}
+        <li class="nav-item"><a href="{% url 'interactions:library' %}"{% if active == "library" %} class="active"{% endif %}>📚 Library</a></li>
+        <li class="nav-item"><a href="{% url 'accounts:profile' user.username %}"{% if active == "profile" %} class="active"{% endif %}>👤 Profile</a></li>
+        <li class="nav-item"><a href="{% url 'stats:dashboard' %}"{% if active == "stats" %} class="active"{% endif %}>📊 Stats</a></li>
+        <li class="nav-item"><a href="{% url 'stats:audience' %}"{% if active == "audience" %} class="active"{% endif %}>👥 Audience</a></li>
+        <li class="nav-item"><a href="{% url 'notifications:list' %}"{% if active == "notifications" %} class="active"{% endif %}>🔔 Notifications</a></li>
+      {% endif %}
+    </ul>
+  </div>
+</aside>

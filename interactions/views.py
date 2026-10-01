@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from articles.models import Article
@@ -57,7 +58,8 @@ def library_view(request):
     Show user's library (bookmarked articles, lists, and notifications).
     """
     # 1. Bookmarks va Lists (Mavjud kod)
-    bookmarks = request.user.bookmarks.select_related("article__author", "article").all()
+    bookmarks = request.user.bookmarks.select_related("article__author")
+    history = request.user.reading_history.select_related("article")[:20]
     lists = request.user.reading_lists.annotate(items_total=Count("items"))
 
     # 2. Notifications (Xatoni to'g'irlash uchun qo'shilgan qism)
@@ -69,6 +71,7 @@ def library_view(request):
     context = {
         "bookmarks": bookmarks,
         "lists": lists,
+        "history": history,
         "comment_notifications": comment_notifications  # Shablonda shu nomdan foydalanamiz
     }
 
@@ -126,11 +129,22 @@ def remove_from_list(request):
     return JsonResponse({"success": True, "items_count": reading_list.items.count()})
 
 @login_required
+@require_POST
+def create_list(request):
+    """POST: name -> creates (or reuses) a reading list. Returns JSON with its URL."""
+    name = request.POST.get("name", "").strip()[:150]
+    if not name:
+        return JsonResponse({"error": "List name is required"}, status=400)
+    reading_list, _ = ReadingList.objects.get_or_create(user=request.user, name=name)
+    return JsonResponse({"id": reading_list.id, "url": reverse("interactions:reading-list-detail", args=[reading_list.id])})
+
+
+@login_required
 def lists_view(request):
     """
     Show user's lists with items.
     """
-    lists = request.user.reading_lists.prefetch_related("items__article__author").all()
+    lists = request.user.reading_lists.annotate(items_total=Count("items"))
     return render(request, "interactions/lists.html", {"lists": lists})
 
 @login_required

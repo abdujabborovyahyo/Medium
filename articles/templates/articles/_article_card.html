@@ -1,0 +1,50 @@
+{# One article in a feed (home page, article list). Expects `article`. #}
+<div class="article-item">
+  <div class="article-cover">
+    <a href="{{ article.get_absolute_url }}">
+      {% if article.cover_image %}
+        <img src="{{ article.cover_image.url }}" alt="{{ article.title }}" loading="lazy">
+      {% else %}
+        <div class="cover-placeholder">📝</div>
+      {% endif %}
+    </a>
+  </div>
+
+  <div class="article-content">
+    <div class="article-meta">
+      <div class="article-author">
+        <div class="article-author-avatar">
+          {% if article.author.avatar %}
+            <img src="{{ article.author.avatar.url }}" alt="">
+          {% else %}
+            {{ article.author.username|slice:":1"|upper }}
+          {% endif %}
+        </div>
+        <span><a href="{% url 'accounts:profile' article.author.username %}">{{ article.author.username }}</a></span>
+      </div>
+      <span>{{ article.published_at|date:"M j, Y" }}</span>
+    </div>
+
+    {% if article.is_member_only %}
+      <div class="member-only-badge-sm">⭐ Member-only</div>
+    {% endif %}
+
+    <h2><a href="{{ article.get_absolute_url }}">{{ article.title }}</a></h2>
+    <p class="article-excerpt">{{ article.summary|truncatewords:40 }}</p>
+
+    <div class="article-actions">
+      <button type="button" data-like-btn class="like-btn {% if article.user_has_liked %}liked{% endif %}" data-article-id="{{ article.id }}">
+        <span class="heart">❤</span>
+        <span class="count">{{ article.likes_total }}</span>
+      </button>
+      <button type="button" data-bookmark-btn
+              class="btn bookmark-btn {% if article.user_has_bookmarked %}saved{% endif %}"
+              data-article-id="{{ article.id }}" title="Save to library">
+        <span class="label">Save</span>
+      </button>
+      {% if user.is_authenticated %}
+        <button type="button" class="btn" data-article-id="{{ article.id }}" data-add-to-list>Save to list</button>
+      {% endif %}
+    </div>
+  </div>
+</div>

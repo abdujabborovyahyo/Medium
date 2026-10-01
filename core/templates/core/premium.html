@@ -1,302 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upgrade to Medium Premium</title>
-    <!-- Google Fonts -->
-    <link href="https://googleapis.com" rel="stylesheet">
-    <style>:root {
-    --primary-color: #000000;
-    --accent-color: #1A8917; /* Medium Green */
-    --text-color-light: #6B6B6B;
-    --bg-color: #F9F9F9;
-    --border-color: #E6E6E6;
-    --radius: 8px;
-}
+{% extends "core/base.html" %}
+{% block title %}Premium · MediumClone{% endblock %}
+{% block content %}
+<div class="page-narrow">
+  <section class="card premium-card">
+    <div class="premium-summary">
+      <h1>Unlock the best of MediumClone</h1>
+      <p class="hint">Unlimited access to every story, direct support for the writers you love and ad-free reading.</p>
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Inter', sans-serif;
-}
+      <div class="plan-card">
+        <div>
+          <strong>Premium (Annual)</strong>
+          <div class="hint">Billed annually</div>
+        </div>
+        <div class="plan-price">$50<span>/year</span></div>
+      </div>
 
-body {
-    background-color: var(--bg-color);
-    color: var(--primary-color);
-    line-height: 1.6;
-}
+      <h3>What's included</h3>
+      <ul class="plain-list">
+        <li>✨ Unlimited access to every story</li>
+        <li>⭐ All member-only stories</li>
+        <li>🎧 Audio versions of popular articles</li>
+        <li>🔓 Ad-free reading experience</li>
+      </ul>
+    </div>
 
-/* Navbar */
-.navbar {
-    display: flex;
-    align-items: center;
-    padding: 20px 40px;
-    background-color: #ffffff;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.logo {
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -1px;
-}
-
-/* Main Container */
-.container {
-    max-width: 1000px;
-    margin: 50px auto;
-    padding: 0 20px;
-}
-
-.checkout-wrapper {
-    display: flex;
-    gap: 60px;
-    background: #ffffff;
-    border-radius: var(--radius);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
-}
-
-/* Left Section */
-.summary-section {
-    flex: 1;
-    padding: 50px;
-}
-
-.summary-section h1 {
-    font-size: 32px;
-    font-weight: 700;
-    margin-bottom: 15px;
-}
-
-.summary-section .subtitle {
-    color: var(--text-color-light);
-    font-size: 16px;
-    margin-bottom: 30px;
-}
-
-.plan-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border: 1px solid var(--accent-color);
-    border-radius: var(--radius);
-    background-color: rgba(26, 137, 23, 0.05);
-    margin-bottom: 30px;
-}
-
-.plan-details {
-    display: flex;
-    flex-direction: column;
-}
-
-.plan-name {
-    font-weight: 600;
-}
-
-.plan-duration {
-    font-size: 14px;
-    color: var(--text-color-light);
-    margin-top: 5px;
-}
-
-.plan-price {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--accent-color);
-}
-
-.features h3 {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 15px;
-}
-
-.features ul {
-    list-style: none;
-}
-
-.features li {
-    font-size: 15px;
-    color: var(--text-color-light);
-    margin-bottom: 12px;
-}
-
-/* Right Section */
-.payment-section {
-    flex: 1;
-    padding: 50px;
-    background-color: #FAFAFA;
-    border-left: 1px solid var(--border-color);
-}
-
-.payment-section h2 {
-    font-size: 22px;
-    margin-bottom: 30px;
-}
-
-.input-group {
-    margin-bottom: 20px;
-}
-
-.input-group label {
-    display: block;
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 8px;
-}
-
-.input-group input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    font-size: 15px;
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-.input-group input:focus {
-    border-color: var(--primary-color);
-}
-
-.fake-card-input {
-    display: flex;
-    align-items: center;
-    background: #ffffff;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    padding: 12px;
-}
-
-.fake-card-input span {
-    margin-right: 10px;
-}
-
-.fake-card-input input {
-    border: none;
-    padding: 0;
-    width: 100%;
-}
-
-.form-row {
-    display: flex;
-    gap: 20px;
-}
-
-.pay-btn {
-    width: 100%;
-    padding: 14px;
-    background-color: var(--accent-color);
-    color: #ffffff;
-    border: none;
-    border-radius: 50px; /* Medium's signature pill button */
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    margin-top: 10px;
-}
-
-.pay-btn:hover {
-    background-color: #146d12;
-}
-
-.terms {
-    font-size: 12px;
-    color: var(--text-color-light);
-    text-align: center;
-    margin-top: 20px;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .checkout-wrapper {
-        flex-direction: column;
-    }
-
-    .payment-section {
-        border-left: none;
-        border-top: 1px solid var(--border-color);
-    }
-}
-</style>
-</head>
-<body>
-
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="logo">Medium</div>
-    </nav>
-
-    <!-- Main Content -->
-    <main class="container">
-        <section class="checkout-wrapper">
-            <!-- Left Side: Order Summary -->
-            <div class="summary-section">
-                <h1>Unlock the best of Medium</h1>
-                <p class="subtitle">Get unlimited access to every story, support the writers you love, and enjoy ad-free reading.</p>
-
-                <div class="plan-card">
-                    <div class="plan-details">
-                        <span class="plan-name">Medium Premium (Annual)</span>
-                        <span class="plan-duration">Billed annually</span>
-                    </div>
-                    <div class="plan-price">
-                        <span class="currency">$</span><span class="amount">50</span><span class="duration">/year</span>
-                    </div>
-                </div>
-
-                <div class="features">
-                    <h3>What's included:</h3>
-                    <ul>
-                        <li>✨ Unlimited access to every story</li>
-                        <li>🤝 Direct support for writers you read</li>
-                        <li>🎧 Audio versions of popular articles</li>
-                        <li>🔓 Ad-free reading experience</li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Right Side: Payment Form -->
-            <div class="payment-section">
-                <h2>Complete your purchase</h2>
-                <form id="payment-form">
-                    <div class="input-group">
-                        <label for="email">Email address</label>
-                        <input type="email" id="email" placeholder="name@example.com" required>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="card-element">Card information</label>
-                        <!-- In a real app, this is where Stripe or PayPal Elements would go -->
-                        <div class="fake-card-input">
-                            <span>💳</span>
-                            <input type="text" placeholder="1234 5678 9012 3456" maxlength="19" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="input-group">
-                            <label for="expiry">Expiry Date</label>
-                            <input type="text" id="expiry" placeholder="MM / YY" maxlength="5" required>
-                        </div>
-                        <div class="input-group">
-                            <label for="cvc">CVC</label>
-                            <input type="text" id="cvc" placeholder="123" maxlength="3" required>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="pay-btn" id="submit-btn">Pay $50.00</button>
-
-                    <p class="terms">By purchasing, you agree to our Terms of Service and Privacy Policy. Subscriptions automatically renew.</p>
-                </form>
-            </div>
-        </section>
-    </main>
-
-</body>
-</html>
+    <div class="premium-cta">
+      <h2>Coming soon</h2>
+      <p class="hint">Online payments are not available yet. For now, member-only stories are open to the author's followers.</p>
+      {% if user.is_authenticated %}
+        <a href="{% url 'articles:list' %}" class="btn btn-primary">Find writers to follow</a>
+      {% else %}
+        <a href="{% url 'accounts:signup' %}" class="btn btn-primary">Create a free account</a>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

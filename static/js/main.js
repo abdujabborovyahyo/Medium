@@ -146,12 +146,14 @@ document.addEventListener("click", function (e) {
   }
 
   // F. FOLLOW TUGMASI (Follow Toggle)
-  const followBtn = e.target.closest("#follow-btn");
+  //    <button data-follow-btn data-user-id="..."> — article page, profile, audience.
+  //    data-remove-on-unfollow: remove the surrounding card after unfollowing.
+  const followBtn = e.target.closest("[data-follow-btn]");
   if (followBtn) {
-    const authorId = followBtn.dataset.authorId;
-    if (!authorId) return;
+    const userId = followBtn.dataset.userId;
+    if (!userId) return;
 
-    fetch(`/notifications/follow/${authorId}/`, {
+    fetch(`/notifications/follow/${userId}/`, {
       method: "POST",
       headers: {
         "X-Requested-With": "XMLHttpRequest",
@@ -165,40 +167,104 @@ document.addEventListener("click", function (e) {
           alert(data.error);
           return;
         }
-        if (data.is_following) {
-          followBtn.textContent = "Following";
-          followBtn.classList.add("following");
-        } else {
-          followBtn.textContent = "Follow";
-          followBtn.classList.remove("following");
+        if (!data.is_following && followBtn.hasAttribute("data-remove-on-unfollow")) {
+          const card = followBtn.closest(".card");
+          if (card) card.remove();
+          return;
         }
-        if (typeof loadNotificationsBadge === "function") {
-          loadNotificationsBadge();
-        }
+        followBtn.textContent = data.is_following ? "Following" : "Follow";
+        followBtn.classList.toggle("following", data.is_following);
+        const counter = document.querySelector(`[data-followers-count="${userId}"]`);
+        if (counter) counter.textContent = data.followers_count;
       })
       .catch((err) => {
         console.error("Follow failed:", err);
         alert("Failed to update follow status. Please try again.");
       });
   }
-});
 
-// ==========================================
-// 3. NOTIFICATIONS (o'qilmagan bildirishnomalar badge'i va dropdown)
-// ==========================================
-document.addEventListener("DOMContentLoaded", function () {
-  const notifBtn = document.getElementById("notifications-btn");
-  const notifMenu = document.getElementById("notifications-menu");
-  if (notifBtn && notifMenu) {
-    notifBtn.addEventListener("click", function (e) {
-      e.preventDefault();
-      notifMenu.style.display = notifMenu.style.display === "none" ? "block" : "none";
-    });
-    document.addEventListener("click", function (e) {
-      if (!notifBtn.parentElement.contains(e.target)) notifMenu.style.display = "none";
+  // J. IZOHGA JAVOB FORMASI (Reply / Cancel)
+  const replyBtn = e.target.closest(".comment-reply-btn");
+  if (replyBtn) {
+    const wrapper = document.getElementById("reply-form-" + replyBtn.dataset.commentId);
+    if (wrapper) {
+      const isOpen = wrapper.classList.contains("open");
+      document.querySelectorAll(".reply-form-wrapper.open").forEach(el => el.classList.remove("open"));
+      if (!isOpen) {
+        wrapper.classList.add("open");
+        wrapper.querySelector("textarea").focus();
+      }
+    }
+  }
+  const cancelReplyBtn = e.target.closest(".btn-reply-cancel");
+  if (cancelReplyBtn) {
+    const wrapper = document.getElementById("reply-form-" + cancelReplyBtn.dataset.commentId);
+    if (wrapper) {
+      wrapper.classList.remove("open");
+      wrapper.querySelector("textarea").value = "";
+    }
+  }
+
+  // G. TABLAR (Library, Stats): <button class="tab-btn" data-tab="x"> + <div id="tab-x" class="tab-content">
+  const tabBtn = e.target.closest(".tab-btn[data-tab]");
+  if (tabBtn) {
+    const container = tabBtn.closest("[data-tabs]") || document;
+    container.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b === tabBtn));
+    container.querySelectorAll(".tab-content").forEach(t => {
+      t.classList.toggle("active", t.id === `tab-${tabBtn.dataset.tab}`);
     });
   }
 
+  // H. YANGI RO'YXAT (Library "New list")
+  const newListBtn = e.target.closest("[data-new-list]");
+  if (newListBtn) {
+    const name = prompt("Name of the new list:", "");
+    if (name === null || !name.trim()) return;
+    const form = new FormData();
+    form.append("name", name.trim());
+    fetch(newListBtn.dataset.url, {
+      method: "POST",
+      body: form,
+      headers: {"X-CSRFToken": csrftoken},
+      credentials: "same-origin",
+    }).then(parseJsonOrLogin)
+      .then(data => {
+        if (data.url) window.location.href = data.url;
+        else alert(data.error || "Could not create the list.");
+      })
+      .catch(err => console.error("Create list failed", err));
+  }
+
+  // I. BILDIRISHNOMALAR: bittasini yoki hammasini o'qilgan deb belgilash
+  const markBtn = e.target.closest("[data-mark-read-url]");
+  if (markBtn) {
+    markBtn.disabled = true;
+    fetch(markBtn.dataset.markReadUrl, {
+      method: "POST",
+      headers: {"X-CSRFToken": csrftoken},
+      credentials: "same-origin",
+    }).then(parseJsonOrLogin)
+      .then(data => {
+        if (!data.success) { markBtn.disabled = false; return; }
+        const items = markBtn.hasAttribute("data-mark-all")
+          ? document.querySelectorAll(".notification-item.unread")
+          : [markBtn.closest(".notification-item")];
+        items.forEach(item => {
+          item.classList.remove("unread");
+          const btn = item.querySelector("[data-mark-read-url]");
+          if (btn) btn.remove();
+        });
+        if (markBtn.isConnected) markBtn.remove();
+        if (typeof window.loadNotificationsBadge === "function") window.loadNotificationsBadge();
+      })
+      .catch(err => { markBtn.disabled = false; console.error("Mark as read failed:", err); });
+  }
+});
+
+// ==========================================
+// 3. SAHIFA YUKLANGANDA: read tracker, parol ko'rsatish, bildirishnoma badge'i
+// ==========================================
+document.addEventListener("DOMContentLoaded", function () {
   // Count a "read" when the reader reaches the end of an article
   // after spending some time on the page (not just a fast scroll).
   const readMarker = document.querySelector("[data-read-url]");
@@ -232,12 +298,8 @@ document.addEventListener("DOMContentLoaded", function () {
       .then(data => {
         const badge = document.getElementById("notif-badge");
         if (!badge) return;
-        if (data.unread_count > 0) {
-          badge.textContent = data.unread_count;
-          badge.style.display = "inline-block";
-        } else {
-          badge.style.display = "none";
-        }
+        badge.textContent = data.unread_count > 99 ? "99+" : data.unread_count;
+        badge.hidden = !(data.unread_count > 0);
       })
       .catch(() => {});
   }

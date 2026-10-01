@@ -1,0 +1,12 @@
+{# Compact article row with thumbnail. Expects `article`; optional `note` + `note_time` ("saved 2 days ago"). #}
+<div class="list-card-main">
+  <div class="thumb">
+    {% if article.cover_image %}<img src="{{ article.cover_image.url }}" alt="">{% endif %}
+  </div>
+  <div>
+    <a href="{{ article.get_absolute_url }}"><strong>{{ article.title }}</strong></a>
+    <div class="meta">
+      by <a href="{% url 'accounts:profile' article.author.username %}">{{ article.author.username }}</a>{% if note %} · {{ note }}{% if note_time %} {{ note_time|timesince }} ago{% endif %}{% endif %}
+    </div>
+  </div>
+</div>

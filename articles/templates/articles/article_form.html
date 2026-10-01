@@ -8,21 +8,20 @@
 {% endblock %}
 
 {% block content %}
-<div style="display:flex;gap:0;width:100%">
-  <!-- Left Sidebar (minimal) -->
-  <aside class="left-sidebar" style="width:200px;border-right:1px solid var(--border)">
-    <div class="card" style="padding:1rem">
-      <h4 style="margin:0 0 1rem">📝 Writing</h4>
-      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.5rem">
-        <li><a href="{% url 'articles:list' %}" class="hint" style="text-decoration:none">← Back to articles</a></li>
-        <li><a href="{% url 'core:home' %}" class="hint" style="text-decoration:none">🏠 Home</a></li>
+<div class="page-layout">
+  <aside class="left-sidebar editor-sidebar">
+    <div class="card">
+      <h4>📝 Writing</h4>
+      <ul>
+        <li class="nav-item"><a href="{% url 'articles:list' %}">← Back to articles</a></li>
+        <li class="nav-item"><a href="{% url 'core:home' %}">🏠 Home</a></li>
       </ul>
     </div>
   </aside>
 
-  <!-- Main Editor -->
-  <section class="center-feed" style="flex:1;max-width:900px;margin:0 auto;padding:2rem">
-    <form method="post" class="article-form" id="article-form" enctype="multipart/form-data" novalidate>
+  <section class="center-feed editor-main">
+    <form method="post" class="article-form" id="article-form" enctype="multipart/form-data" novalidate
+          data-upload-url="{% url 'articles:upload-media' %}">
       {% csrf_token %}
 
       {% if form.non_field_errors %}
@@ -30,123 +29,102 @@
       {% endif %}
 
       <!-- Title & excerpt -->
-      <div style="margin-bottom:2rem">
+      <div class="editor-section">
         <input type="text" name="title" id="id_title" class="editor-title" placeholder="Write your article title"
-               maxlength="255" value="{{ form.title.value|default_if_none:'' }}" required
-               style="width:100%">
+               maxlength="255" value="{{ form.title.value|default_if_none:'' }}" required>
         {% if form.title.errors %}<div class="field-error">{{ form.title.errors.0 }}</div>{% endif %}
 
         <textarea name="excerpt" id="id_excerpt" class="editor-excerpt" rows="2"
-                  placeholder="Add a compelling summary (optional)"
-                  style="width:100%">{{ form.excerpt.value|default_if_none:'' }}</textarea>
+                  placeholder="Add a compelling summary (optional)">{{ form.excerpt.value|default_if_none:'' }}</textarea>
       </div>
 
-      <div style="border-top:1px solid var(--border);margin-bottom:2rem"></div>
+      <hr class="editor-divider">
 
-      <!-- Cover Image -->
-      <div class="cover-section" style="margin-bottom:2rem;padding:1.5rem;background:var(--soft);border-radius:var(--radius)">
-        <h4 style="margin:0 0 1rem">📸 Cover Image</h4>
-        <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap">
-          <div id="cover-preview" style="width:200px;height:120px;border-radius:var(--radius);background:white;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden">
+      <!-- Cover image -->
+      <div class="editor-panel">
+        <h4>📸 Cover Image</h4>
+        <div class="cover-picker">
+          <div id="cover-preview" class="cover-preview">
             {% if object.cover_image %}
-              <img src="{{ object.cover_image.url }}" alt="cover" style="width:100%;height:100%;object-fit:cover">
+              <img src="{{ object.cover_image.url }}" alt="cover">
             {% else %}
-              <div style="text-align:center;color:var(--muted)">
-                <div style="font-size:2rem;margin-bottom:.5rem">📷</div>
+              <div class="cover-preview-empty">
+                <div>📷</div>
                 <small>Upload a cover image</small>
               </div>
             {% endif %}
           </div>
-          <div style="flex:1">
-            <label for="id_cover_image" class="btn btn-primary" style="display:inline-block;cursor:pointer;margin-bottom:1rem">Choose Image</label>
-            <input type="file" id="id_cover_image" name="cover_image" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">
-            <small class="hint" style="display:block">Recommended size: 1200x600px. Formats: JPG, PNG, WebP. Max 5 MB.</small>
+          <div class="cover-picker-info">
+            <label for="id_cover_image" class="btn btn-primary">Choose Image</label>
+            <input type="file" id="id_cover_image" name="cover_image" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+            <small class="hint">Recommended size: 1200x600px. Formats: JPG, PNG, WebP. Max 5 MB.</small>
             {% if form.cover_image.errors %}<div class="field-error">{{ form.cover_image.errors.0 }}</div>{% endif %}
           </div>
         </div>
       </div>
 
       <!-- Content (Quill editor) -->
-      <div style="margin-bottom:2rem">
-        <h4 style="margin:0 0 1rem">✍️ Article Content</h4>
+      <div class="editor-section">
+        <h4>✍️ Article Content</h4>
         {{ form.body }}
-        <div style="background:white;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
-          <div id="quill-editor" style="min-height:400px;font-size:1rem"></div>
+        <div class="editor-box">
+          <div id="quill-editor"></div>
         </div>
         {% if form.body.errors %}<div class="field-error">{{ form.body.errors.0 }}</div>{% endif %}
       </div>
 
       <!-- Tags -->
-      <div style="margin-bottom:2rem;padding:1.5rem;background:var(--soft);border-radius:var(--radius)">
-        <h4 style="margin:0 0 1rem"><label for="id_tags">🏷️ Tags</label></h4>
-        <input type="text" name="tags" id="id_tags" placeholder="e.g. technology, django, web development"
-               value="{% if form.is_bound %}{{ form.data.tags|default:'' }}{% else %}{{ form.initial.tags|default:'' }}{% endif %}"
-               style="width:100%;padding:.75rem;border:1px solid var(--border);border-radius:var(--radius);font-size:1rem">
-        <small class="hint" style="display:block;margin-top:.5rem">Separate tags with commas. Up to 5 tags.</small>
+      <div class="editor-panel">
+        <h4><label for="id_tags">🏷️ Tags</label></h4>
+        <input type="text" name="tags" id="id_tags" class="text-input" placeholder="e.g. technology, django, web development"
+               value="{% if form.is_bound %}{{ form.data.tags|default:'' }}{% else %}{{ form.initial.tags|default:'' }}{% endif %}">
+        <small class="hint">Separate tags with commas. Up to 5 tags.</small>
         {% if form.tags.errors %}<div class="field-error">{{ form.tags.errors.0 }}</div>{% endif %}
       </div>
 
       <!-- Publish settings -->
       <div class="publish-settings">
         <div>
-          <h4 style="margin:0 0 1rem"><label for="id_status">📅 Status</label></h4>
-          <select name="status" id="id_status" class="status-select" style="width:100%;padding:.75rem;border:1px solid var(--border);border-radius:var(--radius)">
+          <h4><label for="id_status">📅 Status</label></h4>
+          <select name="status" id="id_status" class="text-input">
             <option value="draft" {% if form.status.value == "draft" %}selected{% endif %}>Save as Draft</option>
             <option value="published" {% if form.status.value == "published" %}selected{% endif %}>Publish Now</option>
           </select>
         </div>
         <div>
-          <h4 style="margin:0 0 1rem">🔒 Visibility</h4>
-          <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer">
-            <input type="checkbox" name="is_member_only" id="id_is_member_only" {% if form.is_member_only.value %}checked{% endif %} style="cursor:pointer">
+          <h4>🔒 Visibility</h4>
+          <label class="checkbox-label">
+            <input type="checkbox" name="is_member_only" id="id_is_member_only" {% if form.is_member_only.value %}checked{% endif %}>
             <span>Member-only story</span>
           </label>
           <small class="hint">Only your followers can read this</small>
         </div>
       </div>
 
-      <div style="text-align:center;margin-top:1.5rem">
-        <button type="submit" class="btn btn-primary" style="padding:.75rem 2rem;font-weight:600;min-width:200px">
+      <div class="editor-submit">
+        <button type="submit" class="btn btn-primary">
           {% if object %}Update Article{% else %}Save Article{% endif %}
         </button>
-        <div style="margin-top:1rem">
-          <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'articles:list' %}{% endif %}" class="hint">Cancel and go back</a>
-        </div>
+        <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'articles:list' %}{% endif %}" class="hint">Cancel and go back</a>
       </div>
     </form>
   </section>
 
-  <!-- Right Sidebar (Tips) -->
-  <aside class="right-sidebar" style="width:280px;border-left:1px solid var(--border)">
+  <aside class="right-sidebar">
     <div class="card">
-      <h4 style="margin:0 0 1rem">✍️ Writing Tips</h4>
-      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:1rem;font-size:.9rem">
-        <li>
-          <strong>Compelling title</strong>
-          <small class="hint">Make it clear and engaging</small>
-        </li>
-        <li>
-          <strong>Good summary</strong>
-          <small class="hint">Summarize in 1-2 sentences</small>
-        </li>
-        <li>
-          <strong>Cover image</strong>
-          <small class="hint">Adds visual appeal</small>
-        </li>
-        <li>
-          <strong>Clear structure</strong>
-          <small class="hint">Use headings and paragraphs</small>
-        </li>
-        <li>
-          <strong>Relevant tags</strong>
-          <small class="hint">Help readers find your work</small>
-        </li>
+      <h4>✍️ Writing Tips</h4>
+      <ul class="plain-list tips-list">
+        <li><strong>Compelling title</strong> <small class="hint">Make it clear and engaging</small></li>
+        <li><strong>Good summary</strong> <small class="hint">Summarize in 1-2 sentences</small></li>
+        <li><strong>Cover image</strong> <small class="hint">Adds visual appeal</small></li>
+        <li><strong>Clear structure</strong> <small class="hint">Use headings and paragraphs</small></li>
+        <li><strong>Relevant tags</strong> <small class="hint">Help readers find your work</small></li>
       </ul>
     </div>
 
-    <div class="card" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;margin-top:1rem">
-      <h4 style="margin:0 0 1rem;color:white">💡 Pro Tips</h4>
-      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.75rem;font-size:.85rem">
+    <div class="card promo-card">
+      <h4>💡 Pro Tips</h4>
+      <ul class="plain-list">
         <li>📌 Use headlines to structure your thoughts</li>
         <li>🖼️ Add images to break up text</li>
         <li>✅ Proofread before publishing</li>
@@ -156,175 +134,9 @@
     </div>
   </aside>
 </div>
+{% endblock %}
 
-<script src="{% static 'vendor/quill-1.3.7/quill.min.js' %}"></script>
-<script>
-(function () {
-  const form = document.getElementById("article-form");
-  const coverInput = document.getElementById("id_cover_image");
-  const hiddenBodyInput = document.getElementById("id_body");
-
-  // Cover image preview
-  coverInput.addEventListener("change", function (e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function (event) {
-      const preview = document.getElementById("cover-preview");
-      preview.innerHTML = "";
-      const img = document.createElement("img");
-      img.src = event.target.result;
-      img.alt = "cover";
-      img.style.cssText = "width:100%;height:100%;object-fit:cover";
-      preview.appendChild(img);
-    };
-    reader.readAsDataURL(file);
-  });
-
-  // Quill editor
-  const quill = new Quill("#quill-editor", {
-    theme: "snow",
-    placeholder: "Write your article here...",
-    modules: {
-      toolbar: {
-        container: [
-          [{ header: [1, 2, 3, false] }],
-          ["bold", "italic", "underline", "strike"],
-          ["link", "image", "video", "blockquote", "code-block"],
-          [{ list: "ordered" }, { list: "bullet" }],
-          [{ align: [] }],
-          ["clean"]
-        ],
-        handlers: { image: uploadImage }
-      }
-    }
-  });
-
-  // Images are uploaded to the server instead of being stored as huge base64 strings
-  function uploadImage() {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/jpeg,image/png,image/gif,image/webp";
-    input.onchange = function () {
-      const file = input.files[0];
-      if (!file) return;
-      const data = new FormData();
-      data.append("file", file);
-      fetch("{% url 'articles:upload-media' %}", {
-        method: "POST",
-        body: data,
-        headers: { "X-CSRFToken": csrftoken },
-        credentials: "same-origin"
-      })
-        .then(parseJsonOrLogin)
-        .then(function (res) {
-          if (res.error) { alert(res.error); return; }
-          const range = quill.getSelection(true);
-          quill.insertEmbed(range.index, "image", res.url, "user");
-          quill.setSelection(range.index + 1);
-        })
-        .catch(function () { alert("Image upload failed. Please try again."); });
-    };
-    input.click();
-  }
-
-  // Edit mode / re-rendered form: load the existing content
-  if (hiddenBodyInput.value) {
-    quill.root.innerHTML = hiddenBodyInput.value;
-  }
-
-  form.addEventListener("submit", function () {
-    hiddenBodyInput.value = quill.getText().trim() || quill.root.querySelector("img,iframe")
-      ? quill.root.innerHTML
-      : "";
-  });
-})();
-</script>
-
-<!-- Quill Editor Styles -->
-<style>
-.ql-container {
-  min-height: 400px;
-  font-size: 1.1rem;
-  line-height: 1.8;
-}
-
-.ql-editor {
-  padding: 2rem 1.5rem;
-}
-
-.ql-editor.ql-blank::before {
-  color: var(--muted);
-  font-style: italic;
-}
-
-.ql-toolbar {
-  background: #f9fafb;
-  border: none;
-  border-bottom: 1px solid var(--border);
-  padding: 0.75rem 1rem;
-}
-
-.ql-toolbar.ql-snow .ql-formats {
-  margin-right: 1rem;
-}
-
-.ql-toolbar.ql-snow .ql-stroke {
-  stroke: var(--text);
-}
-
-.ql-toolbar.ql-snow .ql-fill,
-.ql-toolbar.ql-snow .ql-stroke.ql-fill {
-  fill: var(--text);
-}
-
-.ql-toolbar.ql-snow button:hover,
-.ql-toolbar.ql-snow button.ql-active {
-  color: var(--accent);
-}
-
-.ql-toolbar.ql-snow button:hover .ql-stroke,
-.ql-toolbar.ql-snow button.ql-active .ql-stroke {
-  stroke: var(--accent);
-}
-
-.ql-toolbar.ql-snow button:hover .ql-fill,
-.ql-toolbar.ql-snow button.ql-active .ql-fill {
-  fill: var(--accent);
-}
-
-/* Editor title styling */
-.editor-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  border: none;
-  outline: none;
-  line-height: 1.3;
-  margin-bottom: 0.5rem;
-}
-
-.publish-settings {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-  padding: 1.5rem;
-  background: var(--soft);
-  border-radius: var(--radius);
-}
-
-@media (max-width: 640px) {
-  .publish-settings { grid-template-columns: 1fr; }
-  .editor-title { font-size: 1.75rem; }
-}
-
-.editor-excerpt {
-  padding: 0.75rem 0;
-  border: none;
-  outline: none;
-  font-size: 1rem;
-  resize: none;
-  font-family: inherit;
-  color: var(--muted);
-}
-</style>
+{% block extra_js %}
+  <script src="{% static 'vendor/quill-1.3.7/quill.min.js' %}"></script>
+  <script src="{% static 'js/editor.js' %}"></script>
 {% endblock %}

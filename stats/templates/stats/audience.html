@@ -1,110 +1,46 @@
 {% extends "core/base.html" %}
+{% block title %}Audience · MediumClone{% endblock %}
 {% block content %}
-<div style="display:flex;gap:0;width:100%">
-  <aside class="left-sidebar">
-    <div class="card">
-      <ul>
-        <li class="nav-item"><a href="{% url 'stats:dashboard' %}">📊 Stats</a></li>
-        <li class="nav-item"><a href="{% url 'stats:audience' %}" class="active">👥 Audience</a></li>
-      </ul>
-    </div>
-  </aside>
+<div class="page-layout">
+  {% include "core/_side_nav.html" with active="audience" %}
 
-  <section class="center-feed" style="max-width:900px">
-    <h1 style="margin-bottom:2rem">👥 Your Audience</h1>
+  <section class="center-feed wide">
+    <h1 class="page-title">👥 Your Audience</h1>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-bottom:2rem">
-      <div class="card" style="padding:1.5rem;text-align:center">
-        <div class="hint">Total Followers</div>
-        <div style="font-size:3rem;font-weight:700;margin:1rem 0">{{ followers_count }}</div>
+    <div class="stat-grid">
+      <div class="card stat-card plain">
+        <div class="stat-label">Followers</div>
+        <div class="stat-value">{{ followers_count }}</div>
       </div>
-      <div class="card" style="padding:1.5rem;text-align:center">
-        <div class="hint">Following</div>
-        <div style="font-size:3rem;font-weight:700;margin:1rem 0">{{ following_count }}</div>
+      <div class="card stat-card plain">
+        <div class="stat-label">Following</div>
+        <div class="stat-value">{{ following_count }}</div>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem">
-      <!-- Followers -->
+    <div class="two-col">
       <div>
-        <h2 style="margin-bottom:1rem">👥 Followers ({{ followers_count }})</h2>
-        {% if followers %}
-          <div style="display:flex;flex-direction:column;gap:.75rem">
-            {% for f in followers %}
-              <div class="card" style="padding:1rem;display:flex;align-items:center;justify-content:space-between">
-                <div style="display:flex;align-items:center;gap:1rem;flex:1">
-                  {% if f.follower.avatar %}
-                    <img src="{{ f.follower.avatar.url }}" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover">
-                  {% else %}
-                    <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.1rem">{{ f.follower.username|slice:":1"|upper }}</div>
-                  {% endif %}
-                  <div>
-                    <strong><a href="{% url 'accounts:profile' f.follower.username %}">{{ f.follower.username }}</a></strong>
-                    <div class="hint" style="font-size:.9rem">{{ f.follower.bio|truncatewords:15 }}</div>
-                    <div class="meta" style="font-size:.85rem">Followed {{ f.created_at|timesince }} ago</div>
-                  </div>
-                </div>
-                <button class="btn" style="white-space:nowrap">View profile</button>
-              </div>
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="card" style="padding:2rem;text-align:center">
-            <p>You have no followers yet. Keep writing!</p>
-          </div>
-        {% endif %}
+        <h2 class="section-title">Followers</h2>
+        <div class="stack">
+          {% for f in followers %}
+            {% include "stats/_person_card.html" with person=f.follower since=f.created_at %}
+          {% empty %}
+            <div class="card empty-state">You have no followers yet. Keep writing!</div>
+          {% endfor %}
+        </div>
       </div>
 
-      <!-- Following -->
       <div>
-        <h2 style="margin-bottom:1rem">🔗 Following ({{ following_count }})</h2>
-        {% if following %}
-          <div style="display:flex;flex-direction:column;gap:.75rem">
-            {% for f in following %}
-              <div class="card" style="padding:1rem;display:flex;align-items:center;justify-content:space-between">
-                <div style="display:flex;align-items:center;gap:1rem;flex:1">
-                  {% if f.following.avatar %}
-                    <img src="{{ f.following.avatar.url }}" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover">
-                  {% else %}
-                    <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.1rem">{{ f.following.username|slice:":1"|upper }}</div>
-                  {% endif %}
-                  <div>
-                    <strong><a href="{% url 'accounts:profile' f.following.username %}">{{ f.following.username }}</a></strong>
-                    <div class="hint" style="font-size:.9rem">{{ f.following.articles.count }} articles</div>
-                    <div class="meta" style="font-size:.85rem">Following since {{ f.created_at|date:"M j, Y" }}</div>
-                  </div>
-                </div>
-                <button class="btn-unfollow" data-user-id="{{ f.following.id }}" style="white-space:nowrap;background:#f3f4f6">Unfollow</button>
-              </div>
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="card" style="padding:2rem;text-align:center">
-            <p>You're not following anyone yet.</p>
-          </div>
-        {% endif %}
+        <h2 class="section-title">Following</h2>
+        <div class="stack">
+          {% for f in following %}
+            {% include "stats/_person_card.html" with person=f.following since=f.created_at unfollow=True %}
+          {% empty %}
+            <div class="card empty-state">You're not following anyone yet.</div>
+          {% endfor %}
+        </div>
       </div>
     </div>
   </section>
-
-  <aside class="right-sidebar"></aside>
 </div>
-
-<script>
-document.addEventListener('click', function(e) {
-  const unfollowBtn = e.target.closest('.btn-unfollow');
-  if (unfollowBtn) {
-    const userId = unfollowBtn.dataset.userId;
-    fetch(`/notifications/follow/${userId}/`, {
-      method: 'POST',
-      headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Accept': 'application/json' },
-      credentials: 'same-origin',
-    }).then(res => res.json()).then(data => {
-      if (!data.is_following) {
-        unfollowBtn.closest('.card').remove();
-      }
-    });
-  }
-});
-</script>
 {% endblock %}

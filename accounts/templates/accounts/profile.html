@@ -1,48 +1,61 @@
 {% extends "core/base.html" %}
+{% block title %}{{ profile_user.username }} · MediumClone{% endblock %}
 {% block content %}
-<div class="profile-page container" style="display:flex;gap:1.5rem">
-  <aside class="profile-aside" style="width:220px">
-    <div class="card" style="padding:1rem;text-align:center">
+<div class="profile-layout">
+  <aside class="profile-aside">
+    <div class="card profile-card">
       {% if profile_user.avatar %}
-        <img src="{{ profile_user.avatar.url }}" alt="{{ profile_user.username }}" style="width:88px;height:88px;border-radius:50%;object-fit:cover">
+        <img src="{{ profile_user.avatar.url }}" alt="{{ profile_user.username }}" class="avatar avatar-lg">
       {% else %}
-        <div style="width:88px;height:88px;border-radius:50%;background:#e6f3f2;display:flex;align-items:center;justify-content:center;font-weight:700;color:#0b5f6b">{{ profile_user.username|slice:":1"|upper }}</div>
+        <div class="avatar avatar-lg">{{ profile_user.username|slice:":1"|upper }}</div>
       {% endif %}
-      <h3 style="margin:.5rem 0 0">{{ profile_user.username }}</h3>
-      <p class="hint" style="margin:.25rem 0 0">{{ profile_user.bio }}</p>
-      <div style="margin-top:.75rem">
-        {% if profile_user.website %}
-          <a href="{{ profile_user.website }}" target="_blank" rel="noopener" class="hint">{{ profile_user.website }}</a>
-        {% endif %}
+      <h3>{{ profile_user.username }}</h3>
+      {% if profile_user.bio %}<p class="hint bio">{{ profile_user.bio }}</p>{% endif %}
+
+      <div class="profile-stats">
+        <div><strong>{{ stats.articles_count }}</strong>stories</div>
+        <div><strong data-followers-count="{{ profile_user.id }}">{{ stats.followers_count }}</strong>followers</div>
       </div>
+
+      {% if profile_user.website %}
+        <a href="{{ profile_user.website }}" target="_blank" rel="noopener noreferrer" class="hint">{{ profile_user.website }}</a>
+      {% endif %}
+
       {% if request.user == profile_user %}
-        <a href="{% url 'accounts:profile_edit' profile_user.username %}" class="btn" style="margin-top:.75rem">Edit profile</a>
+        <div><a href="{% url 'accounts:profile_edit' profile_user.username %}" class="btn">Edit profile</a></div>
+      {% elif user.is_authenticated %}
+        <div>
+          <button type="button" class="follow-btn {% if is_following %}following{% endif %}"
+                  data-follow-btn data-user-id="{{ profile_user.id }}">
+            {% if is_following %}Following{% else %}Follow{% endif %}
+          </button>
+        </div>
       {% endif %}
     </div>
 
-    <nav style="margin-top:1rem">
-      <ul style="list-style:none;padding:0;margin:0">
-        <li><a href="{% url 'core:home' %}" class="nav-link">Home</a></li>
-        <li><a href="{% url 'interactions:library' %}" class="nav-link">Library</a></li>
-        <li><a href="{% url 'stats:dashboard' %}" class="nav-link">Stats</a></li>
-      </ul>
-    </nav>
+    {% if request.user == profile_user %}
+      <nav class="card profile-nav">
+        <ul class="plain-list">
+          <li><a href="{% url 'interactions:library' %}" class="nav-link">📚 Library</a></li>
+          <li><a href="{% url 'stats:dashboard' %}" class="nav-link">📊 Stats</a></li>
+          <li><a href="{% url 'notifications:list' %}" class="nav-link">🔔 Notifications</a></li>
+        </ul>
+      </nav>
+    {% endif %}
   </aside>
 
-  <main style="flex:1">
-    <div class="card" style="padding:1rem">
-      <h2>Stories by {{ profile_user.username }}</h2>
-      <div class="articles-grid" style="margin-top:1rem">
-        {% for a in articles %}
-          <article class="card">
-            <h3><a href="{{ a.get_absolute_url }}">{{ a.title }}</a></h3>
-            <p class="meta">Published {{ a.published_at|date:"M j, Y" }}</p>
-            <p>{{ a.summary|truncatewords:30 }}</p>
-          </article>
-        {% empty %}
-          <p>No published stories yet.</p>
-        {% endfor %}
-      </div>
+  <main class="profile-main">
+    <h2 class="section-title">Stories by {{ profile_user.username }}</h2>
+    <div class="stack">
+      {% for a in articles %}
+        <article class="card story-card">
+          <h3><a href="{{ a.get_absolute_url }}">{{ a.title }}</a></h3>
+          <p class="meta">Published {{ a.published_at|date:"M j, Y" }} · {{ a.views_count }} views</p>
+          <p>{{ a.summary|truncatewords:30 }}</p>
+        </article>
+      {% empty %}
+        <div class="card empty-state">No published stories yet.</div>
+      {% endfor %}
     </div>
   </main>
 </div>

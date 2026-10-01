@@ -1,73 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - Page Not Found</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            text-align: center;
-        }
-
-        .container {
-            max-width: 600px;
-            padding: 2rem;
-        }
-
-        h1 {
-            font-size: 8rem;
-            font-weight: 900;
-            color: #2c3e50;
-            margin-bottom: 0;
-            line-height: 1;
-        }
-
-        p {
-            font-size: 1.5rem;
-            color: #7f8c8d;
-            margin-bottom: 2rem;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 0.8rem 2rem;
-            background-color: #3498db;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: 600;
-            transition: background 0.3s ease;
-        }
-
-        .btn:hover {
-            background-color: #2980b9;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 480px) {
-            h1 { font-size: 5rem; }
-            p { font-size: 1.2rem; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>404</h1>
-        <p>Oops! The page you're looking for doesn't exist.</p>
-        <a href="{% url 'core:home' %}" class="btn">Return Home</a>
-    </div>
-</body>
-</html>
+{% extends "core/base.html" %}
+{% block title %}Page not found · MediumClone{% endblock %}
+{% block content %}
+<div class="error-page">
+  <h1>404</h1>
+  <p>Oops! The page you're looking for doesn't exist.</p>
+  <a href="{% url 'core:home' %}" class="btn btn-primary">Return Home</a>
+</div>
+{% endblock %}
