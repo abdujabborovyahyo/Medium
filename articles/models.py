@@ -1,5 +1,8 @@
+import html
+import re
+
 from django.conf import settings
-from django.db import models
+from django.db import connection, models
 from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
@@ -31,7 +34,41 @@ class Tag(models.Model):
         super().save(*args, **kwargs)
 
 
+def html_to_text(value):
+    """Plain text version of the article HTML (used for search and previews)."""
+    text = html.unescape(strip_tags(re.sub(r"<(br|/p|/h\d|/li|/blockquote)[^>]*>", " ", value or "")))
+    return re.sub(r"\s+", " ", text).strip()
+
+
 class ArticleQuerySet(models.QuerySet):
+    def search(self, query):
+        """
+        PostgreSQL: real full-text search ranked by relevance (title > excerpt > body).
+        Other databases (SQLite in development): simple case-insensitive matching.
+        """
+        query = (query or "").strip()
+        if not query:
+            return self
+        if connection.vendor == "postgresql":
+            from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+
+            vector = (
+                SearchVector("title", weight="A")
+                + SearchVector("excerpt", weight="B")
+                + SearchVector("body_text", weight="C")
+            )
+            search_query = SearchQuery(query, search_type="websearch")
+            # Filter with the @@ match operator; rank only orders the matches
+            # (ts_rank can be slightly above 0 even for rows that don't match).
+            return (
+                self.annotate(search=vector, rank=SearchRank(vector, search_query))
+                .filter(search=search_query)
+                .order_by("-rank", "-published_at")
+            )
+        return self.filter(
+            Q(title__icontains=query) | Q(excerpt__icontains=query) | Q(body_text__icontains=query)
+        )
+
     def published(self):
         return self.filter(status=Article.Status.PUBLISHED)
 
@@ -52,6 +89,8 @@ class Article(models.Model):
     slug = models.SlugField(max_length=300, unique=True, blank=True)
     # Sanitized HTML produced by the Quill editor (see sanitizers.py)
     body = models.TextField()
+    # Plain text copy of `body` (no HTML tags), filled automatically in save()
+    body_text = models.TextField(blank=True, editable=False)
     excerpt = models.TextField(blank=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT)
     tags = models.ManyToManyField(Tag, blank=True, related_name="articles")
@@ -77,6 +116,7 @@ class Article(models.Model):
         if not self.slug:
             self.slug = self._unique_slug()
         self.body = sanitize_html(self.body)
+        self.body_text = html_to_text(self.body)
         if self.status == self.Status.PUBLISHED and not self.published_at:
             self.published_at = timezone.now()
         super().save(*args, **kwargs)
@@ -100,7 +140,7 @@ class Article(models.Model):
     @property
     def summary(self):
         """Excerpt, or the beginning of the body as plain text."""
-        return self.excerpt or strip_tags(self.body)
+        return self.excerpt or self.body_text
 
     def can_view(self, user):
         """Check if a user can read this article."""
@@ -113,10 +153,3 @@ class Article(models.Model):
         if not user or not user.is_authenticated:
             return False
         return self.author.followers.filter(follower=user).exists()
-
-    def get_root_comments(self):
-        return (
-            self.comments.filter(parent__isnull=True)
-            .select_related("author")
-            .prefetch_related("children__author")
-        )

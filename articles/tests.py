@@ -133,3 +133,23 @@ class ArticleViewTests(TestCase):
         Article.objects.create(author=self.author, title="Hello", body="<p>x</p>", status="published")
         self.assertContains(self.client.get(reverse("core:home")), "Hello")
         self.assertContains(self.client.get(reverse("articles:list")), "Hello")
+
+
+class SearchTests(TestCase):
+    def setUp(self):
+        self.author = CustomUser.objects.create_user("writer", "w@example.com", "pass12345!")
+
+    def test_body_text_has_no_html(self):
+        article = Article.objects.create(
+            author=self.author, title="T", body="<p>Hello&nbsp;<strong>world</strong></p><p>Again</p>"
+        )
+        self.assertEqual(article.body_text, "Hello world Again")
+
+    def test_search_does_not_match_html_markup(self):
+        Article.objects.create(
+            author=self.author, title="Plain", status="published",
+            body='<p class="ql-align-center"><strong>Python</strong> tips</p>',
+        )
+        self.assertEqual(Article.objects.search("strong").count(), 0)
+        self.assertEqual(Article.objects.search("ql-align").count(), 0)
+        self.assertEqual(Article.objects.search("python").count(), 1)

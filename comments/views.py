@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
@@ -35,9 +36,16 @@ def add_comment(request):
 
     parent = None
     if parent_id.isdigit():
-        parent = Comment.objects.filter(pk=parent_id, article=article).select_related("author").first()
+        parent = Comment.objects.approved().filter(pk=parent_id, article=article).select_related("author").first()
 
-    comment = Comment.objects.create(article=article, author=request.user, body=body, parent=parent)
+    approved = not settings.COMMENTS_REQUIRE_APPROVAL
+    comment = Comment.objects.create(
+        article=article, author=request.user, body=body, parent=parent, approved=approved
+    )
+    if not approved:
+        messages.info(request, "Thanks! Your comment will appear after a moderator approves it.")
+        return redirect(redirect_url)
+
     description = truncatewords(body, 15)
 
     if article.author_id != request.user.pk:

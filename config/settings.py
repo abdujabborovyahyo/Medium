@@ -175,6 +175,13 @@ ALLOWED_FILE_TYPES = [
 ]
 
 # --------------------------------------------------------------------------
+# Comments
+# --------------------------------------------------------------------------
+
+# When True, new comments are hidden until approved in the admin.
+COMMENTS_REQUIRE_APPROVAL = env.bool("COMMENTS_REQUIRE_APPROVAL", default=False)
+
+# --------------------------------------------------------------------------
 # Security (active when DEBUG is off)
 # --------------------------------------------------------------------------
 

@@ -45,9 +45,9 @@
       </div>
       {% endif %}
 
-      {% if c.children.all %}
+      {% if c.replies %}
       <div class="comment-replies">
-        {% include "comments/_comment.html" with comments=c.children.all %}
+        {% include "comments/_comment.html" with comments=c.replies %}
       </div>
       {% endif %}
     </div>

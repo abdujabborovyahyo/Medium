@@ -67,6 +67,11 @@
         {{ object.body|safe }}
       </div>
 
+      {% if object.is_published and user != object.author %}
+        {# main.js counts a "read" when this marker becomes visible #}
+        <div data-read-url="{% url 'stats:record-read' object.pk %}" data-csrf="{{ csrf_token }}"></div>
+      {% endif %}
+
       <!-- Tags -->
       <footer class="tags">
         {% for t in object.tags.all %}
@@ -96,7 +101,7 @@
 
         <!-- Threaded comments list -->
         <div class="comments-list">
-          {% include "comments/_comment.html" with comments=object.get_root_comments %}
+          {% include "comments/_comment.html" with comments=comments %}
         </div>
       </section>
     </article>

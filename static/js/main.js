@@ -199,6 +199,23 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  // Count a "read" when the reader reaches the end of an article
+  // after spending some time on the page (not just a fast scroll).
+  const readMarker = document.querySelector("[data-read-url]");
+  if (readMarker && "IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(function (entries) {
+      if (!entries[0].isIntersecting) return;
+      observer.disconnect();
+      fetch(readMarker.dataset.readUrl, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken || readMarker.dataset.csrf },
+        credentials: "same-origin",
+      }).catch(() => {});
+    });
+    // Start watching only after 10 seconds on the page
+    setTimeout(function () { observer.observe(readMarker); }, 10000);
+  }
+
   // "Show password" checkbox on login / signup forms
   document.querySelectorAll("[data-toggle-password]").forEach(function (box) {
     box.addEventListener("change", function () {

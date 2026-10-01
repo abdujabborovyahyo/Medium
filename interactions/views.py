@@ -75,19 +75,6 @@ def library_view(request):
     return render(request, "interactions/library.html", context)
 
 
-@login_required
-def stats_view(request):
-    user = request.user
-    articles_count = user.articles.count()
-    # One query instead of one query per article (N+1)
-    likes_received = ArticleLike.objects.filter(article__author=user).count()
-    saved_count = user.bookmarks.count()
-    return render(request, "interactions/stats.html", {
-        "articles_count": articles_count,
-        "likes_received": likes_received,
-        "saved_count": saved_count,
-    })
-
 # ----- Reading list management -----
 @login_required
 @require_POST
