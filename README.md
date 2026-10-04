@@ -43,6 +43,7 @@ To'liq ro'yxat — `.env.example` faylida.
 | `DATABASE_URL` | `sqlite:///...` yoki `postgres://...` | `db.sqlite3` |
 | `DJANGO_SERVE_MEDIA` | Yuklangan fayllarni Django o'zi bersinmi | debug'da `True` |
 | `DJANGO_USE_HTTPS` | HTTPS redirect, secure cookie, HSTS | `True` |
+| `COMMENTS_REQUIRE_APPROVAL` | Yangi izohlar admin tasdiqlamaguncha yashirin turadi | `False` |
 
 Yangi `SECRET_KEY` yaratish:
 
@@ -82,6 +83,18 @@ shuning uchun production'da PostgreSQL ishlating.
 | `notifications` | Bildirishnomalar, follow, o'qish tarixi |
 | `stats` | Kunlik statistika va grafiklar |
 | `core` | Bosh sahifa, umumiy shablonlar |
+
+## Qanday ishlaydi (qisqacha)
+
+- **Qidiruv:** PostgreSQL'da sarlavha, qisqa tavsif va matn bo'yicha full-text search
+  (relevance bo'yicha tartiblanadi). SQLite'da oddiy `icontains`. Qidiruv HTML ustida emas,
+  `Article.body_text` (toza matn) ustida ishlaydi.
+- **Statistika:** `stats.DailyStats` har kuni muallif uchun views, reads (maqola oxirigacha
+  o'qilgan), likes va yangi followerlarni yig'adi. Muallifning o'z ko'rishlari hisoblanmaydi.
+- **Izohlar moderatsiyasi:** admin panelda izohni "Hide" qilsangiz, u va unga yozilgan javoblar
+  saytda ko'rinmaydi.
+- **Frontend:** barcha stillar `static/css/main.css` da (shablonlarda inline `style=""` yo'q),
+  JS — `static/js/main.js`, `editor.js`, `stats.js`.
 
 Frontend kutubxonalari (Quill 1.3.7, Chart.js 4.5.1) `static/vendor/` ichida saqlanadi —
 CDN'ga bog'liq emas.

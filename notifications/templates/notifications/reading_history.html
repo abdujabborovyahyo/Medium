@@ -1,32 +1,16 @@
 {% extends "core/base.html" %}
+{% block title %}Reading history · MediumClone{% endblock %}
 {% block content %}
-<div class="container" style="max-width:900px;margin:2rem auto">
-  <h1>Reading history</h1>
-  
-  {% if history %}
-    <div style="display:flex;flex-direction:column;gap:.75rem;margin-top:1rem">
-      {% for entry in history %}
-        <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:.75rem">
-          <div style="display:flex;gap:1rem;align-items:center">
-            <div style="width:56px;height:56px;background:#f1f5f9;border-radius:6px;overflow:hidden">
-              {% if entry.article.cover_image %}
-                <img src="{{ entry.article.cover_image.url }}" alt="" style="width:100%;height:100%;object-fit:cover">
-              {% else %}
-                <div style="width:100%;height:100%;background:#e6f3f2"></div>
-              {% endif %}
-            </div>
-            <div>
-              <a href="{{ entry.article.get_absolute_url }}"><strong>{{ entry.article.title }}</strong></a>
-              <div class="meta" style="font-size:.9rem">Viewed {{ entry.viewed_at|timesince }} ago</div>
-            </div>
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="card" style="padding:1rem">
-      <p>No reading history yet.</p>
-    </div>
-  {% endif %}
+<div class="page-narrow">
+  <h1 class="page-title">Reading history</h1>
+  <div class="stack">
+    {% for entry in history %}
+      <div class="card list-card">
+        {% include "interactions/_article_row.html" with article=entry.article note="viewed" note_time=entry.viewed_at %}
+      </div>
+    {% empty %}
+      <div class="card empty-state">No reading history yet.</div>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}

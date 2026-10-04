@@ -1,17 +1,12 @@
 from django.contrib import admin
 
-# Register your models here.
-from django.contrib import admin
-from .models import DailyStats, UserStats
+from .models import DailyStats
+
 
 @admin.register(DailyStats)
 class DailyStatsAdmin(admin.ModelAdmin):
-    list_display = ("user", "article", "date", "views", "reads")
-    list_filter = ("date", "user")
+    list_display = ("user", "article", "date", "views", "reads", "likes", "followers_gained")
+    list_filter = ("date",)
     search_fields = ("user__username", "article__title")
+    list_select_related = ("user", "article")
     readonly_fields = ("date",)
-
-@admin.register(UserStats)
-class UserStatsAdmin(admin.ModelAdmin):
-    list_display = ("user", "total_views", "total_reads", "total_followers", "updated_at")
-    readonly_fields = ("updated_at",)

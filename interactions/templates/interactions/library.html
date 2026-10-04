@@ -1,176 +1,91 @@
 {% extends "core/base.html" %}
-{% load static %}
+{% block title %}Library · MediumClone{% endblock %}
 {% block content %}
-<div class="library-page">
-  <div class="container" style="display:flex;gap:1.5rem">
-    <aside class="left-nav" style="width:220px">
-      <div class="card" style="padding:1rem">
-        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.5rem">
-          <li><a href="{% url 'core:home' %}" class="nav-link">Home</a></li>
-          <li><a href="{% url 'interactions:library' %}" class="nav-link active">Library</a></li>
-          <li><a href="{% url 'interactions:lists' %}" class="nav-link">Lists</a></li>
-          <li><a href="{% url 'accounts:profile' request.user.username %}" class="nav-link">Profile</a></li>
-          <li><a href="{% url 'interactions:stats' %}" class="nav-link">Stats</a></li>
-          <li><a href="{% url 'notifications:list' %}" class="nav-link">Notifications</a></li>
-        </ul>
+<div class="page-layout">
+  {% include "core/_side_nav.html" with active="library" %}
+
+  <section class="center-feed wide">
+    <h1 class="page-title">Your library</h1>
+
+    <div class="card library-banner">
+      <div>
+        <h3>Create a list to easily organize stories</h3>
+        <p>Group saved stories into reading lists.</p>
       </div>
-    </aside>
-
-    <main style="flex:1">
-      <h1>Your library</h1>
-
-      <div class="card" style="background:linear-gradient(90deg,#0b8c42,#0b7b38);color:white;padding:1.25rem;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <h3 style="margin:0">Create a list to easily organize and share stories</h3>
-          <p class="hint" style="color:rgba(255,255,255,0.9);margin:.5rem 0 0">Create a reading list to group saved stories.</p>
-        </div>
-        <div>
-          <button id="start-list-btn" class="btn btn-primary">New list</button>
-        </div>
-      </div>
-
-      <!-- Tabs -->
-      <div class="tabs-container" style="display:flex;gap:1rem;border-bottom:2px solid #eef5f6;margin-bottom:1rem;padding-bottom:.5rem">
-        <button class="tab-btn active" data-tab="saved">Your lists ({{ lists|length }})</button>
-        <button class="tab-btn" data-tab="bookmarks">Saved lists ({{ bookmarks|length }})</button>
-        <button class="tab-btn" data-tab="history">Highlights</button>
-        <button class="tab-btn" data-tab="reading">Reading history</button>
-        <button class="tab-btn" data-tab="replies">Responses</button>
-      </div>
-
-      <!-- Tab: Your lists -->
-      <div id="tab-saved" class="tab-content active">
-        <section>
-          <h3>Your lists</h3>
-          {% if lists %}
-            <div style="display:flex;flex-direction:column;gap:.75rem">
-              {% for l in lists %}
-                <a href="{% url 'interactions:reading-list-detail' l.id %}" class="card" style="display:flex;align-items:center;justify-content:space-between;padding:.75rem;text-decoration:none;color:inherit">
-                  <div>
-                    <strong>{{ l.name }}</strong>
-                    <div class="hint" style="font-size:.9rem">{{ l.items_total }} stories · {% if l.is_private %}Private{% else %}Public{% endif %}</div>
-                  </div>
-                  <div class="meta">{{ l.created_at|date:"M j, Y" }}</div>
-                </a>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="card" style="padding:1rem">
-              <p>You have no lists yet.</p>
-            </div>
-          {% endif %}
-        </section>
-      </div>
-
-      <!-- Tab: Saved articles / Bookmarks -->
-      <div id="tab-bookmarks" class="tab-content" style="display:none">
-        <section>
-          <h3>Saved stories</h3>
-          {% if bookmarks %}
-            <div style="display:flex;flex-direction:column;gap:.75rem">
-              {% for b in bookmarks %}
-                <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:.75rem">
-                  <div style="display:flex;gap:1rem;align-items:center;flex:1">
-                    <div style="width:56px;height:56px;background:#f1f5f9;border-radius:6px;overflow:hidden;flex-shrink:0">
-                      {% if b.article.cover_image %}
-                        <img src="{{ b.article.cover_image.url }}" alt="" style="width:100%;height:100%;object-fit:cover">
-                      {% else %}
-                        <div style="width:100%;height:100%;background:#e6f3f2"></div>
-                      {% endif %}
-                    </div>
-                    <div style="flex:1">
-                      <a href="{{ b.article.get_absolute_url }}"><strong>{{ b.article.title }}</strong></a>
-                      <div class="meta" style="color:#6b7280;font-size:.9rem">by <a href="{% url 'accounts:profile' b.article.author.username %}">{{ b.article.author.username }}</a></div>
-                      <div class="meta" style="font-size:.85rem">Saved {{ b.created_at|timesince }} ago</div>
-                    </div>
-                  </div>
-                  <div style="display:flex;gap:.5rem;align-items:center">
-                    <button class="btn" data-article-id="{{ b.article.id }}" data-remove-bookmark>Remove</button>
-                    <button class="btn" data-article-id="{{ b.article.id }}" data-add-to-list>Save to list</button>
-                  </div>
-                </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="card" style="padding:1rem">
-              <p>No saved stories yet. Save stories to your library to read them later.</p>
-            </div>
-          {% endif %}
-        </section>
-      </div>
-
-      <!-- Tab: Highlights (bookmarks within articles) -->
-      <div id="tab-history" class="tab-content" style="display:none">
-        <div class="card" style="padding:1rem">
-          <p>Highlights feature coming soon. Highlight text while reading to save key passages.</p>
-        </div>
-      </div>
-
-      <!-- Tab: Reading history -->
-      <div id="tab-reading" class="tab-content" style="display:none">
-        <section>
-          <h3>Your reading history</h3>
-          <div style="display:flex;flex-direction:column;gap:.75rem">
-            {% for entry in user.reading_history.all|slice:":20" %}
-              <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:.75rem">
-                <div style="display:flex;gap:1rem;align-items:center;flex:1">
-                  <div style="width:56px;height:56px;background:#f1f5f9;border-radius:6px;overflow:hidden;flex-shrink:0">
-                    {% if entry.article.cover_image %}
-                      <img src="{{ entry.article.cover_image.url }}" alt="" style="width:100%;height:100%;object-fit:cover">
-                    {% else %}
-                      <div style="width:100%;height:100%;background:#e6f3f2"></div>
-                    {% endif %}
-                  </div>
-                  <div style="flex:1">
-                    <a href="{{ entry.article.get_absolute_url }}"><strong>{{ entry.article.title }}</strong></a>
-                    <div class="meta" style="font-size:.85rem">Viewed {{ entry.viewed_at|timesince }} ago</div>
-                  </div>
-                </div>
-              </div>
-            {% empty %}
-              <p>No reading history yet.</p>
-            {% endfor %}
-          </div>
-        </section>
-      </div>
-
-      <!-- Tab: Responses / Comments -->
-      <div id="tab-replies" class="tab-content" style="display:none">
-        <section>
-          <h3>Responses to your articles</h3><!-- 141-qator: 'with' kerak emas, tayyor 'comment_notifications'ni ishlatamiz -->
-          {% if comment_notifications %}
-                 <div style="display:flex; flex-direction:column; gap:.75rem">
-                      {% for notif in comment_notifications %}
-                   <div class="card" style="padding:.75rem">
-                <!-- Bildirishnoma mazmuni -->
-                <strong>{{ notif.sender.username }}</strong> commented on
-                <a href="{{ notif.article.get_absolute_url }}">{{ notif.article.title }}</a>
-                <p class="hint">{{ notif.description }}</p>
-            </div>
-        {% endfor %}
+      <button type="button" class="btn" data-new-list data-url="{% url 'interactions:create-list' %}">New list</button>
     </div>
-{% else %}
-    <p>No responses yet.</p>
-{% endif %}
 
-        </section>
+    <div data-tabs>
+      <div class="tabs-container">
+        <button type="button" class="tab-btn active" data-tab="saved">Saved ({{ bookmarks|length }})</button>
+        <button type="button" class="tab-btn" data-tab="lists">Lists ({{ lists|length }})</button>
+        <button type="button" class="tab-btn" data-tab="history">Reading history</button>
+        <button type="button" class="tab-btn" data-tab="responses">Responses</button>
       </div>
-    </main>
 
-    <aside style="width:220px"></aside>
-  </div>
+      <div id="tab-saved" class="tab-content active">
+        <div class="stack">
+          {% for b in bookmarks %}
+            <div class="card list-card">
+              {% include "interactions/_article_row.html" with article=b.article note="saved" note_time=b.created_at %}
+              <div class="list-card-actions">
+                <button type="button" class="btn" data-article-id="{{ b.article.id }}" data-remove-bookmark>Remove</button>
+                <button type="button" class="btn" data-article-id="{{ b.article.id }}" data-add-to-list>Save to list</button>
+              </div>
+            </div>
+          {% empty %}
+            <div class="card empty-state">No saved stories yet. Press “Save” on a story to read it later.</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div id="tab-lists" class="tab-content">
+        <div class="stack">
+          {% for l in lists %}
+            <a href="{% url 'interactions:reading-list-detail' l.id %}" class="card list-card">
+              <div>
+                <strong>{{ l.name }}</strong>
+                <div class="hint">{{ l.items_total }} stories · {% if l.is_private %}Private{% else %}Public{% endif %}</div>
+              </div>
+              <div class="meta">{{ l.created_at|date:"M j, Y" }}</div>
+            </a>
+          {% empty %}
+            <div class="card empty-state">You have no lists yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div id="tab-history" class="tab-content">
+        <div class="stack">
+          {% for entry in history %}
+            <div class="card list-card">
+              {% include "interactions/_article_row.html" with article=entry.article note="viewed" note_time=entry.viewed_at %}
+            </div>
+          {% empty %}
+            <div class="card empty-state">No reading history yet.</div>
+          {% endfor %}
+        </div>
+        {% if history %}<p class="text-center"><a href="{% url 'notifications:reading-history' %}">Full reading history →</a></p>{% endif %}
+      </div>
+
+      <div id="tab-responses" class="tab-content">
+        <div class="stack">
+          {% for notif in comment_notifications %}
+            <div class="card list-card">
+              <div>
+                <strong>{{ notif.sender.username|default:"Someone" }}</strong>
+                {% if notif.notification_type == "reply" %}replied to your comment on{% else %}commented on{% endif %}
+                {% if notif.article %}<a href="{{ notif.article.get_absolute_url }}#comments">{{ notif.article.title }}</a>{% endif %}
+                <p class="hint">{{ notif.description }}</p>
+              </div>
+              <div class="meta">{{ notif.created_at|timesince }} ago</div>
+            </div>
+          {% empty %}
+            <div class="card empty-state">No responses yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
-
-<script>
-document.addEventListener("click", function(e) {
-  const tabBtn = e.target.closest(".tab-btn");
-  if (tabBtn) {
-    const tabName = tabBtn.dataset.tab;
-    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(t => t.style.display = "none");
-    tabBtn.classList.add("active");
-    document.getElementById(`tab-${tabName}`).style.display = "block";
-  }
-});
-</script>
 {% endblock %}

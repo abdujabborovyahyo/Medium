@@ -1,19 +1,21 @@
 {% extends "core/base.html" %}
+{% block title %}About · MediumClone{% endblock %}
 {% block content %}
-<div class="container" style="max-width:820px;margin:2rem auto">
-  <div class="card" style="padding:1.5rem">
-    <h1>About & Help</h1>
-    <p>Welcome to MediumClone — a demo Medium-like site built with Django. This page is your introduction and helps readers get started.</p>
+<div class="page-narrow">
+  <div class="card card-body prose">
+    <h1>About &amp; Help</h1>
+    <p>Welcome to MediumClone — a Medium-like blog built with Django for learning purposes.</p>
 
     <h3>How to use</h3>
     <ul>
       <li>Create an account or log in to write and save stories.</li>
-      <li>Use the editor to add images, videos, or files via the Add button.</li>
-      <li>Click the bookmark icon to save a story to your library.</li>
+      <li>Use the editor toolbar to add headings, links, images and videos.</li>
+      <li>Press “Save” on a story to keep it in your library, or add it to a reading list.</li>
+      <li>Follow writers to read their member-only stories and get notified about new posts.</li>
     </ul>
 
-    <h3>Contact & Support</h3>
-    <p>If you need help, open an issue in your repo or ask the developer.</p>
+    <h3>Contact &amp; Support</h3>
+    <p>If you need help, open an issue in the project repository.</p>
   </div>
 </div>
 {% endblock %}

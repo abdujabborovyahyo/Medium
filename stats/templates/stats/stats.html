@@ -1,295 +1,82 @@
 {% extends "core/base.html" %}
 {% load static %}
+{% block title %}Stats · MediumClone{% endblock %}
 {% block content %}
-<div style="display:flex;gap:0;width:100%">
-  <!-- Left Sidebar -->
-  <aside class="left-sidebar">
-    <div class="card">
-      <ul>
-        <li class="nav-item"><a href="{% url 'core:home' %}">🏠 Home</a></li>
-        <li class="nav-item"><a href="{% url 'interactions:library' %}">📚 Library</a></li>
-        <li class="nav-item"><a href="{% url 'accounts:profile' request.user.username %}">👤 Profile</a></li>
-        <li class="nav-item"><a href="{% url 'stats:dashboard' %}" class="active">📊 Stats</a></li>
-        <li class="nav-item"><a href="{% url 'stats:audience' %}">👥 Audience</a></li>
-      </ul>
-    </div>
-  </aside>
+<div class="page-layout">
+  {% include "core/_side_nav.html" with active="stats" %}
 
-  <!-- Center Content -->
-  <section class="center-feed" style="max-width:900px">
-    <div style="margin-bottom:2rem">
-      <h1 style="margin-bottom:.5rem">📊 Stats</h1>
-      <p class="hint">Track your article performance and audience growth</p>
-    </div>
-
-    <!-- Tabs -->
-    <div class="tabs-container">
-      <button class="tab-btn active" data-tab="stories">Stories</button>
-      <button class="tab-btn" data-tab="audience">Audience</button>
-    </div>
-
-    <!-- Stories Tab -->
-    <div id="tab-stories" class="tab-content active">
-      <!-- Key Metrics -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem">
-        <div class="card" style="padding:1.5rem;text-align:center;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white">
-          <div class="hint" style="color:rgba(255,255,255,0.9);font-size:.9rem">Presentations</div>
-          <div style="font-size:2.5rem;font-weight:700;margin:.5rem 0">{{ articles_count }}</div>
-          <small style="color:rgba(255,255,255,0.8)">Published articles</small>
-        </div>
-
-        <div class="card" style="padding:1.5rem;text-align:center;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);color:white">
-          <div class="hint" style="color:rgba(255,255,255,0.9);font-size:.9rem">Views</div>
-          <div style="font-size:2.5rem;font-weight:700;margin:.5rem 0">{{ total_views }}</div>
-          <small style="color:rgba(255,255,255,0.8)">Total views</small>
-        </div>
-
-        <div class="card" style="padding:1.5rem;text-align:center;background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);color:white">
-          <div class="hint" style="color:rgba(255,255,255,0.9);font-size:.9rem">Reads</div>
-          <div style="font-size:2.5rem;font-weight:700;margin:.5rem 0">{{ total_likes }}</div>
-          <small style="color:rgba(255,255,255,0.8)">Complete reads</small>
-        </div>
-
-        <div class="card" style="padding:1.5rem;text-align:center;background:linear-gradient(135deg,#43e97b 0%,#38f9d7 100%);color:white">
-          <div class="hint" style="color:rgba(255,255,255,0.9);font-size:.9rem">Followers</div>
-          <div style="font-size:2.5rem;font-weight:700;margin:.5rem 0">{{ total_followers }}</div>
-          <small style="color:rgba(255,255,255,0.8)">Total followers</small>
-        </div>
-
-        <div class="card" style="padding:1.5rem;text-align:center;background:linear-gradient(135deg,#fa709a 0%,#fee140 100%);color:white">
-          <div class="hint" style="color:rgba(255,255,255,0.9);font-size:.9rem">Subscribers</div>
-          <div style="font-size:2.5rem;font-weight:700;margin:.5rem 0">{{ total_subscribers }}</div>
-          <small style="color:rgba(255,255,255,0.8)">Email subscribers</small>
-        </div>
+  <section class="center-feed wide">
+    <div class="page-header">
+      <div>
+        <h1>📊 Stats</h1>
+        <p class="hint">Track your article performance and audience growth</p>
       </div>
+    </div>
 
-      <!-- Chart -->
-      <div class="card" style="padding:1.5rem;margin-bottom:2rem">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-          <h3>Monthly Performance</h3>
-          <select id="month-selector" style="padding:.5rem;border:1px solid var(--border);border-radius:var(--radius)">
-            <option>Last 30 days</option>
-            <option>Last 3 months</option>
-            <option>Last 6 months</option>
-            <option>Last year</option>
+    <div class="stat-grid">
+      <div class="card stat-card grad-1">
+        <div class="stat-label">Stories</div>
+        <div class="stat-value">{{ articles_count }}</div>
+        <small>Published</small>
+      </div>
+      <div class="card stat-card grad-2">
+        <div class="stat-label">Views</div>
+        <div class="stat-value">{{ total_views }}</div>
+        <small>Article opens</small>
+      </div>
+      <div class="card stat-card grad-3">
+        <div class="stat-label">Reads</div>
+        <div class="stat-value">{{ total_reads }}</div>
+        <small>Read to the end</small>
+      </div>
+      <div class="card stat-card grad-4">
+        <div class="stat-label">Likes</div>
+        <div class="stat-value">{{ total_likes }}</div>
+        <small>On all stories</small>
+      </div>
+      <div class="card stat-card grad-5">
+        <div class="stat-label">Followers</div>
+        <div class="stat-value">{{ total_followers }}</div>
+        <small><a href="{% url 'stats:audience' %}" class="on-dark">See audience →</a></small>
+      </div>
+    </div>
+
+    <div class="card chart-card">
+      <div class="page-header">
+        <h3>Performance</h3>
+        <form method="get">
+          <select name="days" class="period-select" aria-label="Period" data-autosubmit>
+            {% for value, label in periods.items %}
+              <option value="{{ value }}" {% if value == days %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
           </select>
-        </div>
-
-        <div style="position:relative;height:400px;margin:1rem 0">
-          <canvas id="statsChart"></canvas>
-        </div>
-
-        <div style="display:flex;justify-content:center;gap:2rem;margin-top:1rem;padding:1rem;border-top:1px solid var(--border)">
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <span style="width:12px;height:12px;background:#667eea;border-radius:2px"></span>
-            <span class="hint">Views</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <span style="width:12px;height:12px;background:#43e97b;border-radius:2px"></span>
-            <span class="hint">Reads</span>
-          </div>
-        </div>
+          <noscript><button type="submit" class="btn">Show</button></noscript>
+        </form>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="statsChart"></canvas>
       </div>
     </div>
 
-    <!-- Audience Tab -->
-    <div id="tab-audience" class="tab-content" style="display:none">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem">
-        <!-- Followers -->
-        <div>
-          <h3 style="margin-bottom:1rem">👥 Followers ({{ total_followers }})</h3>
-          {% if followers %}
-            <div style="display:flex;flex-direction:column;gap:.75rem">
-              {% for f in followers %}
-                <div class="card" style="padding:.75rem;display:flex;align-items:center;justify-content:space-between">
-                  <div style="display:flex;align-items:center;gap:.75rem">
-                    {% if f.follower.avatar %}
-                      <img src="{{ f.follower.avatar.url }}" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover">
-                    {% else %}
-                      <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:.9rem">{{ f.follower.username|slice:":1"|upper }}</div>
-                    {% endif %}
-                    <div>
-                      <strong><a href="{% url 'accounts:profile' f.follower.username %}">{{ f.follower.username }}</a></strong>
-                      <div class="hint" style="font-size:.85rem">{{ f.follower.bio|truncatewords:10 }}</div>
-                    </div>
-                  </div>
-                  <!-- Update the follow buttons in the Audience tab section: -->
-                  <button class="btn-follow" data-user-id="{{ f.follower.id }}" style="font-size:.85rem;cursor:pointer;white-space:nowrap">
-                    {% if is_following %}Following{% else %}Follow{% endif %}
-                  </button>
-
-                  <!-- And for unfollow: -->
-                  <button class="btn-unfollow" data-user-id="{{ f.following.id }}" style="font-size:.85rem;cursor:pointer;white-space:nowrap;background:#f3f4f6">
-                    Unfollow
-                  </button>
-                </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="card" style="padding:1rem;text-align:center">
-              <p>No followers yet. Keep writing great content!</p>
-            </div>
-          {% endif %}
-        </div>
-
-        <!-- Following -->
-        <div>
-          <h3 style="margin-bottom:1rem">🔗 Following</h3>
-          {% if following %}
-            <div style="display:flex;flex-direction:column;gap:.75rem">
-              {% for f in following %}
-                <div class="card" style="padding:.75rem;display:flex;align-items:center;justify-content:space-between">
-                  <div style="display:flex;align-items:center;gap:.75rem">
-                    {% if f.following.avatar %}
-                      <img src="{{ f.following.avatar.url }}" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover">
-                    {% else %}
-                      <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:.9rem">{{ f.following.username|slice:":1"|upper }}</div>
-                    {% endif %}
-                    <div>
-                      <strong><a href="{% url 'accounts:profile' f.following.username %}">{{ f.following.username }}</a></strong>
-                      <div class="hint" style="font-size:.85rem">{{ f.following.articles.count }} articles</div>
-                    </div>
-                  </div>
-                  <button class="btn-unfollow" data-user-id="{{ f.following.id }}" style="font-size:.85rem">Unfollow</button>
-                </div>
-              {% endfor %}
-            </div>
-          {% else %}
-            <div class="card" style="padding:1rem;text-align:center">
-              <p>You're not following anyone yet.</p>
-            </div>
-          {% endif %}
-        </div>
-      </div>
+    <h3 class="section-title">Top stories</h3>
+    <div class="stack top-stories">
+      {% for a in top_articles %}
+        <a href="{{ a.get_absolute_url }}" class="card list-card">
+          <div class="list-card-main">
+            <div><strong>{{ a.title }}</strong><span class="meta">Published {{ a.published_at|date:"M j, Y" }}</span></div>
+          </div>
+          <div class="meta">{{ a.views_count }} views</div>
+        </a>
+      {% empty %}
+        <div class="card empty-state">Publish your first story to see stats here.</div>
+      {% endfor %}
     </div>
   </section>
-
-  <!-- Right Sidebar -->
-  <aside class="right-sidebar">
-    <div class="card">
-      <h3>💡 Tips</h3>
-      <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:.75rem">
-        <li><a href="#" style="font-size:.9rem">Increase engagement with headlines</a></li>
-        <li><a href="#" style="font-size:.9rem">Add cover images to articles</a></li>
-        <li><a href="#" style="font-size:.9rem">Grow your followers with consistency</a></li>
-        <li><a href="#" style="font-size:.9rem">Respond to all comments</a></li>
-      </ul>
-    </div>
-  </aside>
 </div>
-
 {{ chart_data|json_script:"chart-data" }}
-<script src="{% static 'vendor/chartjs-4.5.1/chart.umd.min.js' %}"></script>
-<script>
-  // Tab switching
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const tabName = this.dataset.tab;
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-      this.classList.add('active');
-      document.getElementById(`tab-${tabName}`).style.display = 'block';
-    });
-  });
+{% endblock %}
 
-  // Chart.js initialization
-  const chartData = JSON.parse(document.getElementById('chart-data').textContent);
-  const ctx = document.getElementById('statsChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: chartData.labels,
-      datasets: [
-        {
-          label: 'Views',
-          data: chartData.views,
-          borderColor: '#667eea',
-          backgroundColor: 'rgba(102, 126, 234, 0.1)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.4,
-          pointRadius: 4,
-          pointBackgroundColor: '#667eea',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-        },
-        {
-          label: 'Reads',
-          data: chartData.reads,
-          borderColor: '#43e97b',
-          backgroundColor: 'rgba(67, 233, 123, 0.1)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.4,
-          pointRadius: 4,
-          pointBackgroundColor: '#43e97b',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          labels: {
-            usePointStyle: true,
-            padding: 20,
-            font: { size: 14, weight: '600' }
-          }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: {
-            color: 'rgba(0, 0, 0, 0.05)',
-            drawBorder: false
-          },
-          ticks: { font: { size: 12 } }
-        },
-        x: {
-          grid: { display: false },
-          ticks: { font: { size: 12 } }
-        }
-      }
-    }
-  });
-
-  // Follow/Unfollow buttons
-  document.addEventListener('click', function(e) {
-    const followBtn = e.target.closest('.btn-follow');
-    if (followBtn) {
-      const userId = followBtn.dataset.userId;
-      fetch(`/notifications/follow/${userId}/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Accept': 'application/json' },
-        credentials: 'same-origin',
-      }).then(res => res.json()).then(data => {
-        if (data.is_following) {
-          followBtn.textContent = 'Following';
-        } else {
-          followBtn.textContent = 'Follow';
-        }
-      });
-    }
-
-    const unfollowBtn = e.target.closest('.btn-unfollow');
-    if (unfollowBtn) {
-      const userId = unfollowBtn.dataset.userId;
-      fetch(`/notifications/follow/${userId}/`, {
-        method: 'POST',
-        headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Accept': 'application/json' },
-        credentials: 'same-origin',
-      }).then(res => res.json()).then(data => {
-        if (!data.is_following) {
-          unfollowBtn.closest('.card').remove();
-        }
-      });
-    }
-  });
-</script>
+{% block extra_js %}
+  <script src="{% static 'vendor/chartjs-4.5.1/chart.umd.min.js' %}"></script>
+  <script src="{% static 'js/stats.js' %}"></script>
 {% endblock %}

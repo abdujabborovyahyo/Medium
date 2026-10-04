@@ -12,8 +12,10 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
+from comments.models import Comment
 from interactions.models import ArticleLike, Bookmark
 from notifications.models import Notification, ReadingHistory, UserFollowing
+from stats.models import DailyStats
 from .forms import ArticleForm
 from .models import Article
 
@@ -58,9 +60,7 @@ class ArticleListView(ListView):
             .annotate(likes_total=Count("likes", distinct=True))
         )
 
-        q = self.request.GET.get("q", "").strip()
-        if q:
-            qs = qs.filter(Q(title__icontains=q) | Q(excerpt__icontains=q) | Q(body__icontains=q))
+        qs = qs.search(self.request.GET.get("q"))
 
         tag = self.request.GET.get("tag", "").strip()
         if tag:
@@ -87,7 +87,10 @@ class ArticleDetailView(DetailView):
             Article.objects.visible_to(user)
             .select_related("author")
             .prefetch_related("tags")
-            .annotate(likes_total=Count("likes", distinct=True), comments_total=Count("comments", distinct=True))
+            .annotate(
+                likes_total=Count("likes", distinct=True),
+                comments_total=Count("comments", filter=Q(comments__approved=True), distinct=True),
+            )
         )
         qs = annotate_user_flags(qs, user)
         if user.is_authenticated:
@@ -111,10 +114,13 @@ class ArticleDetailView(DetailView):
         if request.user.is_authenticated:
             ReadingHistory.objects.update_or_create(user=request.user, article=article)
 
-        # Count one view per session. F() avoids lost updates and doesn't touch updated_at.
+        # Count one view per session, ignoring the author's own visits.
+        # F() avoids lost updates and doesn't touch updated_at.
         session_key = f"viewed_article_{article.pk}"
-        if article.is_published and not request.session.get(session_key):
+        is_author = request.user.pk == article.author_id
+        if article.is_published and not is_author and not request.session.get(session_key):
             Article.objects.filter(pk=article.pk).update(views_count=F("views_count") + 1)
+            DailyStats.change("views", user_id=article.author_id, article_id=article.pk)
             request.session[session_key] = True
 
         return response
@@ -122,6 +128,7 @@ class ArticleDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["is_following"] = getattr(self.object, "user_follows_author", False)
+        context["comments"] = Comment.tree_for(self.object)
         return context
 
 

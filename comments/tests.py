@@ -42,3 +42,29 @@ class CommentTests(TestCase):
         Comment.objects.create(article=self.article, author=None, body="orphan")
         response = self.client.get(self.article.get_absolute_url())
         self.assertContains(response, "Deleted user")
+
+
+class ModerationTests(TestCase):
+    def setUp(self):
+        self.author = CustomUser.objects.create_user("writer", "w@example.com", "pass12345!")
+        self.reader = CustomUser.objects.create_user("reader", "r@example.com", "pass12345!")
+        self.article = Article.objects.create(author=self.author, title="T", body="<p>x</p>", status="published")
+
+    def test_hidden_comments_and_their_replies_are_not_shown(self):
+        hidden = Comment.objects.create(article=self.article, author=self.reader, body="spam text", approved=False)
+        Comment.objects.create(article=self.article, author=self.reader, body="reply to spam", parent=hidden)
+        Comment.objects.create(article=self.article, author=self.reader, body="visible one")
+
+        response = self.client.get(self.article.get_absolute_url())
+        self.assertNotContains(response, "spam text")
+        self.assertNotContains(response, "reply to spam")
+        self.assertContains(response, "visible one")
+        self.assertEqual(response.context["object"].comments_total, 2)  # approved rows (incl. orphan reply)
+
+    def test_require_approval_setting(self):
+        self.client.force_login(self.reader)
+        with self.settings(COMMENTS_REQUIRE_APPROVAL=True):
+            self.client.post(reverse("comments:add"), {"article_id": self.article.pk, "body": "Wait"})
+        comment = Comment.objects.get()
+        self.assertFalse(comment.approved)
+        self.assertFalse(Notification.objects.exists())

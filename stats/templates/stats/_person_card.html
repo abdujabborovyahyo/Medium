@@ -1,0 +1,22 @@
+{# A user row on the audience page. Expects `person`, `since`; `unfollow=True` adds an Unfollow button. #}
+<div class="card list-card">
+  <div class="list-card-main">
+    {% if person.avatar %}
+      <img src="{{ person.avatar.url }}" alt="" class="avatar">
+    {% else %}
+      <div class="avatar">{{ person.username|slice:":1"|upper }}</div>
+    {% endif %}
+    <div>
+      <strong><a href="{% url 'accounts:profile' person.username %}">{{ person.username }}</a></strong>
+      {% if person.bio %}<div class="hint">{{ person.bio|truncatewords:12 }}</div>{% endif %}
+      <div class="meta">Since {{ since|date:"M j, Y" }}</div>
+    </div>
+  </div>
+  <div class="list-card-actions">
+    {% if unfollow %}
+      <button type="button" class="btn" data-follow-btn data-remove-on-unfollow data-user-id="{{ person.id }}">Unfollow</button>
+    {% else %}
+      <a href="{% url 'accounts:profile' person.username %}" class="btn">View profile</a>
+    {% endif %}
+  </div>
+</div>

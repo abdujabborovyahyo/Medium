@@ -1,23 +1,23 @@
 {% extends "core/base.html" %}
+{% block title %}Your lists · MediumClone{% endblock %}
 {% block content %}
-<div class="container" style="max-width:900px;margin:2rem auto">
-  <h1>Your lists</h1>
-  {% if lists %}
-    <div style="display:flex;flex-direction:column;gap:.75rem">
-      {% for l in lists %}
-        <a href="{% url 'interactions:reading-list-detail' l.id %}" class="card" style="display:flex;justify-content:space-between;padding:.75rem;text-decoration:none;color:inherit;">
-          <div>
-            <strong>{{ l.name }}</strong>
-            <p class="hint">{{ l.items.count }} stories · {% if l.is_private %}Private{% else %}Public{% endif %}</p>
-          </div>
-          <div>{{ l.created_at|date:"M j, Y" }}</div>
-        </a>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="card" style="padding:1rem">
-      <p>No lists found. Create a list to organize your saved stories.</p>
-    </div>
-  {% endif %}
+<div class="page-narrow">
+  <div class="page-header">
+    <h1>Your lists</h1>
+    <button type="button" class="btn btn-primary" data-new-list data-url="{% url 'interactions:create-list' %}">New list</button>
+  </div>
+  <div class="stack">
+    {% for l in lists %}
+      <a href="{% url 'interactions:reading-list-detail' l.id %}" class="card list-card">
+        <div>
+          <strong>{{ l.name }}</strong>
+          <p class="hint">{{ l.items_total }} stories · {% if l.is_private %}Private{% else %}Public{% endif %}</p>
+        </div>
+        <div class="meta">{{ l.created_at|date:"M j, Y" }}</div>
+      </a>
+    {% empty %}
+      <div class="card empty-state">No lists yet. Create a list to organize your saved stories.</div>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}

@@ -1,120 +1,36 @@
 {% extends "core/base.html" %}
+{% block title %}Notifications · MediumClone{% endblock %}
 {% block content %}
-<div class="container" style="max-width:900px;margin:2rem auto">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+<div class="page-narrow">
+  <div class="page-header">
     <h1>Notifications</h1>
     {% if unread_count %}
-      <button class="btn btn-primary" id="mark-all-read-btn">Mark all as read</button>
+      <button type="button" class="btn btn-primary" data-mark-all data-mark-read-url="{% url 'notifications:mark-all-as-read' %}">Mark all as read</button>
     {% endif %}
   </div>
 
-  {% if notifications %}
-    <div style="display:flex;flex-direction:column;gap:.75rem">
-      {% for notif in notifications %}
-        <div class="card notification-item {% if not notif.is_read %}unread{% endif %}"
-             data-notification-id="{{ notif.id }}"
-             style="padding:.75rem;display:flex;justify-content:space-between;align-items:center;border-left:4px solid {% if not notif.is_read %}#0b7285{% else %}#e6eef0{% endif %}">
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:.5rem">
-              <strong>{{ notif.title }}</strong>
-            </div>
-            {% if notif.description %}
-              <p class="hint" style="margin:.25rem 0 0">{{ notif.description }}</p>
-            {% endif %}
-            <div class="meta" style="font-size:.85rem">{{ notif.created_at|timesince }} ago</div>
-          </div>
-          <div style="display:flex;gap:.5rem">
-            {% if notif.article %}
-              <a href="{{ notif.article.get_absolute_url }}" class="btn">View</a>
-            {% endif %}
-            {% if not notif.is_read %}
-              <button class="btn mark-notif-read" data-notification-id="{{ notif.id }}">Mark read</button>
-            {% endif %}
-          </div>
+  <div class="stack">
+    {% for notif in notifications %}
+      <div class="card notification-item {% if not notif.is_read %}unread{% endif %}">
+        <div>
+          <strong>{{ notif.title }}</strong>
+          {% if notif.description %}<p class="hint">{{ notif.description }}</p>{% endif %}
+          <div class="meta">{{ notif.created_at|timesince }} ago</div>
         </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="card" style="padding:1rem;text-align:center">
-      <p>No notifications yet.</p>
-    </div>
-  {% endif %}
+        <div class="list-card-actions">
+          {% if notif.article %}
+            <a href="{{ notif.article.get_absolute_url }}{% if notif.comment_id %}#comment-{{ notif.comment_id }}{% endif %}" class="btn">View</a>
+          {% elif notif.sender %}
+            <a href="{% url 'accounts:profile' notif.sender.username %}" class="btn">View profile</a>
+          {% endif %}
+          {% if not notif.is_read %}
+            <button type="button" class="btn" data-mark-read-url="{% url 'notifications:mark-as-read' notif.id %}">Mark read</button>
+          {% endif %}
+        </div>
+      </div>
+    {% empty %}
+      <div class="card empty-state">No notifications yet.</div>
+    {% endfor %}
+  </div>
 </div>
-
-<script>
-// getCookie main.js dan keladi — bu yerda takrorlamaymiz
-// Lekin main.js yuklanmagan holat uchun xavfsiz fallback:
-var _csrf = (typeof csrftoken !== "undefined")
-  ? csrftoken
-  : (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || "";
-
-document.addEventListener("click", function (e) {
-
-  // --- Bitta bildirishnomani o'qilgan deb belgilash ---
-  const markBtn = e.target.closest(".mark-notif-read[data-notification-id]");
-  if (markBtn) {
-    const notifId = markBtn.dataset.notificationId;
-    fetch("/notifications/mark-as-read/" + notifId + "/", {
-      method: "POST",
-      headers: {"X-CSRFToken": _csrf},
-      credentials: "same-origin",
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      if (data.success) {
-        const notifItem = markBtn.closest(".notification-item");
-        if (notifItem) {
-          notifItem.classList.remove("unread");
-          notifItem.style.borderLeftColor = "#e6eef0";
-        }
-        markBtn.remove();
-
-        // Badge ni yangilash
-        if (typeof window.loadNotificationsBadge === "function") {
-          window.loadNotificationsBadge();
-        }
-      }
-    })
-    .catch(function(err) { console.error("Mark as read failed:", err); });
-    return;
-  }
-
-  // --- Hammasini o'qilgan deb belgilash ---
-  const markAllBtn = e.target.closest("#mark-all-read-btn");
-  if (markAllBtn) {
-    markAllBtn.disabled = true;
-    markAllBtn.textContent = "Marking...";
-
-    fetch("/notifications/mark-all-as-read/", {
-      method: "POST",
-      headers: {"X-CSRFToken": _csrf},
-      credentials: "same-origin",
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      if (data.success) {
-        // Barcha unread cardlarni o'qilgan ko'rinishiga o'tkazish
-        document.querySelectorAll(".notification-item.unread").forEach(function(item) {
-          item.classList.remove("unread");
-          item.style.borderLeftColor = "#e6eef0";
-        });
-        document.querySelectorAll(".mark-notif-read").forEach(function(btn) {
-          btn.remove();
-        });
-        markAllBtn.remove();
-
-        // Badge ni yangilash
-        if (typeof window.loadNotificationsBadge === "function") {
-          window.loadNotificationsBadge();
-        }
-      }
-    })
-    .catch(function(err) {
-      console.error("Mark all as read failed:", err);
-      markAllBtn.disabled = false;
-      markAllBtn.textContent = "Mark all as read";
-    });
-  }
-});
-</script>
 {% endblock %}

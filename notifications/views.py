@@ -76,8 +76,8 @@ def notifications_list(request):
     """
     Show all notifications for the logged-in user.
     """
-    notifications = request.user.notifications.all()
-    unread_count = notifications.filter(is_read=False).count()
+    notifications = request.user.notifications.select_related("sender", "article")[:100]
+    unread_count = request.user.notifications.filter(is_read=False).count()
     return render(request, "notifications/notifications_list.html", {
         "notifications": notifications,
         "unread_count": unread_count
